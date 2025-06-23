@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy::prelude::{Cuboid, Plane3d};
-
+use bevy_rapier3d::prelude::*;
 use crate::input::Player;
 
 pub struct WorldPlugin;
@@ -9,6 +9,10 @@ impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_world);
     }
+}
+
+struct ColliderBundle {
+    collider: Collider
 }
 
 fn setup_world(
@@ -26,12 +30,15 @@ fn setup_world(
             ..default()
         })))
         .insert(Transform::IDENTITY);
+        // .insert(Collider::halfspace(Vec3::Y));
 
     // ── terrain glb ──
     let terrain: Handle<Scene> = asset_server.load("models/terrain.glb#Scene0");
+
     commands
         .spawn(SceneRoot(terrain))
-        .insert(Transform::IDENTITY);
+        .insert(Transform::IDENTITY)
+        .insert(Collider::cuboid(50.0, 20.0, 50.0));
 
     // ── ambient light ──
     commands.insert_resource(AmbientLight {
@@ -58,5 +65,8 @@ fn setup_world(
             ..default()
         })))
         .insert(Transform::from_xyz(0.0, 1.0, 0.0))
+        .insert(RigidBody::KinematicPositionBased)
+        .insert(Collider::capsule_y(1.0, 0.5))
+        .insert(KinematicCharacterController::default())
         .insert(Player { speed: 0.0 });
 }

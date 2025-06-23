@@ -8,9 +8,8 @@ description = "Bevy"
 license = "MIT"
 
 [dependencies]
-# Bevy core. `dynamic` = faster compile times on desktop; remove if you need static.
-bevy = { version = "0.16.0-rc1"}
-bevy_rapier3d = "0.29.0"
+bevy = { version = "0.16.0-rc1" }
+bevy_rapier3d = { version = "0.30"}
 bevy-inspector-egui = "0.31.0"
 
 # Optional physics / debug helpers (comment out until you need them)

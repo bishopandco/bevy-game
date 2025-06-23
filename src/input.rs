@@ -4,6 +4,7 @@ use bevy::input::ButtonInput;
 use bevy::input::keyboard::KeyCode;
 use crate::globals::GameParams;
 use bevy::{math::Dir3};
+use bevy_rapier3d::control::KinematicCharacterController;
 
 
 #[derive(Component)]
@@ -21,32 +22,36 @@ impl Plugin for PlayerControlPlugin {
 
 
 fn player_movement_system(
-    keys: Res<ButtonInput<KeyCode>>,
-    mut q: Query<(&mut Transform, &mut Player)>,
-    params: Res<GameParams>,
     time: Res<Time>,
+    params: Res<GameParams>,
+    keys: Res<ButtonInput<KeyCode>>,
+    mut q: Query<(
+        &mut KinematicCharacterController,
+        &mut Transform,
+        &mut Player,
+    )>,
 ) {
     let dt = time.delta_secs();
 
-    for (mut tf, mut player) in &mut q {
+    for (mut controller, mut tf, mut player) in &mut q {
         if keys.pressed(KeyCode::ArrowUp) {
-            player.speed =
-                (player.speed + params.acceleration * dt).clamp(-params.max_speed, params.max_speed);
+            player.speed = (player.speed + params.acceleration * dt).min(params.max_speed);
         } else if keys.pressed(KeyCode::ArrowDown) {
-            player.speed =
-                (player.speed - params.brake_deceleration * dt).clamp(-params.max_speed, params.max_speed);
+            player.speed = (player.speed - params.brake_deceleration * dt).max(-params.max_speed);
         } else {
-            player.speed = player.speed.signum()
+            player.speed = player
+                .speed
+                .signum()
                 * (player.speed.abs() - params.friction * dt).max(0.0);
         }
 
         if keys.pressed(KeyCode::ArrowLeft) {
-            tf.rotate_axis(Dir3::Y,  params.rotation_speed * dt);
+            tf.rotate_axis(Dir3::Y, params.rotation_speed * dt);
         } else if keys.pressed(KeyCode::ArrowRight) {
             tf.rotate_axis(Dir3::Y, -params.rotation_speed * dt);
         }
 
         let forward = tf.rotation * Vec3::Z;
-        tf.translation += forward * player.speed * dt;
+        controller.translation = Some(forward * player.speed * dt);
     }
 }
