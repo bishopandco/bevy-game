@@ -10,7 +10,7 @@ license = "MIT"
 
 [dependencies]
 # Bevy core. `dynamic` = faster compile times on desktop; remove if you need static.
-bevy = { version = "0.16.0-rc.5" }
+bevy = { version = "0.16.0-rc1"}
 
 # Optional physics / debug helpers (comment out until you need them)
 # bevy_rapier3d = "0.25"        # 3D physics

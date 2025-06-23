@@ -17,21 +17,21 @@ fn setup_world(
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    commands.spawn((
-        Mesh3d(meshes.add(Plane3d::default().mesh().size(100.0, 100.0))),
-        MeshMaterial3d(materials.add(StandardMaterial {
+    // ── ground plane ──
+    let ground_mesh = meshes.add(Plane3d::default().mesh().size(100.0, 100.0));
+    commands
+        .spawn(Mesh3d(ground_mesh))
+        .insert(MeshMaterial3d(materials.add(StandardMaterial {
             base_color: Color::srgb(0.2, 0.8, 0.2),
-            ..Default::default()
-        })),
-        Transform::IDENTITY,
-    ));
+            ..default()
+        })))
+        .insert(Transform::IDENTITY);
 
     // ── terrain glb ──
-    let terrain = asset_server.load("models/terrain.glb");
-    commands.spawn((
-        SceneRoot(terrain),
-        Transform::IDENTITY,
-    ));
+    let terrain: Handle<Scene> = asset_server.load("models/terrain.glb#Scene0");
+    commands
+        .spawn(SceneRoot(terrain))
+        .insert(Transform::IDENTITY);
 
     // ── ambient light ──
     commands.insert_resource(AmbientLight {
@@ -41,23 +41,22 @@ fn setup_world(
     });
 
     // ── directional "sun" ──
-    commands.spawn((
-        DirectionalLight {
+    commands
+        .spawn(DirectionalLight {
             illuminance: 3_000.0,
             shadows_enabled: true,
-            ..Default::default()
-        },
-        Transform::from_xyz(5.0, 10.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-    ));
+            ..default()
+        })
+        .insert(Transform::from_xyz(5.0, 10.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y));
 
     // ── player cube ──
-    commands.spawn((
-        Mesh3d(meshes.add(Cuboid::default())),
-        MeshMaterial3d(materials.add(StandardMaterial {
+    let player_mesh = meshes.add(Cuboid::default());
+    commands
+        .spawn(Mesh3d(player_mesh))
+        .insert(MeshMaterial3d(materials.add(StandardMaterial {
             base_color: Color::srgb(0.2, 0.8, 0.2),
-            ..Default::default()
-        })),
-        Transform::from_xyz(0.0, 1.0, 0.0),
-        Player { speed: 0.0 },
-    ));
+            ..default()
+        })))
+        .insert(Transform::from_xyz(0.0, 1.0, 0.0))
+        .insert(Player { speed: 0.0 });
 }

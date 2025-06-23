@@ -17,18 +17,19 @@ fn setup_minimap_camera(
 ) {
     let window = windows.single();
     let win_size = window.unwrap().resolution.physical_size();
+    let mut cam = commands.spawn(Camera3d::default());
 
-    commands.spawn((
-        Camera3d::default(),
-        Camera {
-            order: 1,
-            viewport: Some(Viewport {
-                physical_position: UVec2::new(10, 10),
-                physical_size: UVec2::new(win_size.x / 5, win_size.y / 5),
-                ..Default::default()
-            }),
-            ..Default::default()
-        },
-        Transform::from_xyz(0.0, params.cam_height * 2.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
-    ));
+    cam.insert(Camera {
+        order: 1,
+        viewport: Some(Viewport {
+            physical_position: UVec2::new(10, 10),
+            physical_size: UVec2::new(win_size.x / 5, win_size.y / 5),
+            ..default()
+        }),
+        ..default()
+    })
+        .insert(
+            Transform::from_xyz(0.0, params.cam_height * 2.0, 0.0)
+                .looking_at(Vec3::ZERO, Vec3::Y),
+        );
 }
