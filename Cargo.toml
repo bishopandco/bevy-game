@@ -1,0 +1,25 @@
+[package]
+name = "game_demo"
+version = "0.1.0"
+edition = "2021"
+
+# Tweak this if you publish to crates.io
+authors = ["Michael Bishop <michael@bishopand.com>"]
+description = "Bevy"
+license = "MIT"
+
+[dependencies]
+# Bevy core. `dynamic` = faster compile times on desktop; remove if you need static.
+bevy = { version = "0.15.3" }
+
+# Optional physics / debug helpers (comment out until you need them)
+# bevy_rapier3d = "0.25"        # 3D physics
+# bevy-inspector-egui = "0.23"  # live ECS inspector
+
+[profile.dev]
+opt-level = 1              # a little faster without huge compile time
+debug = true
+
+[profile.release]
+opt-level = "z"            # smaller binary; use 3 for max perf
+lto = "thin"
