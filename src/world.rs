@@ -1,13 +1,12 @@
 use bevy::prelude::*;
 
-use crate::globals::GameParams;
 use crate::input::Player;
 
 pub struct WorldPlugin;
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(setup_world);
+        app.add_systems(Startup, setup_world);
     }
 }
 
@@ -17,17 +16,19 @@ fn setup_world(
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    // ── ground plane ──
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Plane { size: 100.0 })),
-        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+        mesh: Mesh3d(meshes.add(
+            Plane3d::default().mesh().size(100.0, 100.0)
+        )),
+        material: MeshMaterial3d(
+            materials.add(Color::rgb(0.2, 0.8, 0.2))),
         ..Default::default()
     });
 
     // ── terrain glb ──
     let terrain = asset_server.load("models/terrain.glb");
     commands.spawn(SceneBundle {
-        scene: terrain,
+        scene: SceneRoot(terrain),
         transform: Transform::IDENTITY,
         ..Default::default()
     });
@@ -53,8 +54,12 @@ fn setup_world(
     // ── player cube ──
     commands
         .spawn(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-            material: materials.add(Color::rgb(0.8, 0.2, 0.2).into()),
+            mesh: Mesh3d(
+                meshes.add(
+                    Cuboid::from_length(1.0)
+                )
+            ),
+            material: MeshMaterial3d(materials.add(Color::rgb(0.8, 0.2, 0.2))),
             transform: Transform::from_xyz(0.0, 1.0, 0.0),
             ..Default::default()
         })

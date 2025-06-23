@@ -15,9 +15,6 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .insert_resource(GameParams::default())
-        .add_plugin(WorldPlugin)
-        .add_plugin(PlayerControlPlugin)
-        .add_plugin(CameraPlugin)
-        .add_plugin(MinimapPlugin)
+        .add_plugins((WorldPlugin,PlayerControlPlugin, CameraPlugin, MinimapPlugin))
         .run();
 }

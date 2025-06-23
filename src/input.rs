@@ -1,5 +1,10 @@
 use bevy::prelude::*;
+use bevy::prelude::Update;
+use bevy::input::ButtonInput;
+use bevy::input::keyboard::KeyCode;
 use crate::globals::GameParams;
+use bevy::{math::Dir3};
+
 
 #[derive(Component)]
 pub struct Player {
@@ -10,56 +15,40 @@ pub struct PlayerControlPlugin;
 
 impl Plugin for PlayerControlPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(player_movement_system);
+        app.add_systems(Update, player_movement_system);
     }
 }
 
 
 fn player_movement_system(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    time: Res<Time>,
+    keys: Res<ButtonInput<KeyCode>>,
+    mut q: Query<(&mut Transform, &mut Player)>,
     params: Res<GameParams>,
-    mut query: Query<(&mut Transform, &mut Player)>,
+    time: Res<Time>,
 ) {
-    for (mut transform, mut player) in query.iter_mut() {
-        let dt = time.delta_seconds();
+    let dt = time.delta_secs();
 
-
-        if keyboard.pressed(KeyCode::Left) || keyboard.pressed(KeyCode::A) {
-            transform.rotate_y(params.rotation_speed * dt);
-        }
-        if keyboard.pressed(KeyCode::Right) || keyboard.pressed(KeyCode::D) {
-            transform.rotate_y(-params.rotation_speed * dt);
-        }
-
-        if keyboard.pressed(KeyCode::Up) || keyboard.pressed(KeyCode::W) {
-            player.speed -= params.acceleration * dt;
-            if player.speed < -params.max_speed {
-                player.speed = -params.max_speed;
-            }
-        } else if keyboard.pressed(KeyCode::Down) || keyboard.pressed(KeyCode::S) {
-            player.speed += params.brake_deceleration * dt;
-            if player.speed > params.max_speed {
-                player.speed = params.max_speed;
-            }
+    for (mut tf, mut player) in &mut q {
+        // forward / back
+        if keys.pressed(KeyCode::ArrowUp) {
+            player.speed =
+                (player.speed + params.acceleration * dt).clamp(-params.max_speed, params.max_speed);
+        } else if keys.pressed(KeyCode::ArrowDown) {
+            player.speed =
+                (player.speed - params.brake_deceleration * dt).clamp(-params.max_speed, params.max_speed);
         } else {
-            if player.speed > 0.0 {
-                player.speed -= params.friction * dt;
-                if player.speed < 0.0 {
-                    player.speed = 0.0;
-                }
-            } else if player.speed < 0.0 {
-                player.speed += params.friction * dt;
-                if player.speed > 0.0 {
-                    player.speed = 0.0;
-                }
-            }
+            player.speed = player.speed.signum()
+                * (player.speed.abs() - params.friction * dt).max(0.0);
         }
 
-        if player.speed.abs() < 0.001 {
-            player.speed = 0.0;
+        // rotate
+        if keys.pressed(KeyCode::ArrowLeft) {
+            tf.rotate_axis(Dir3::Y,  params.rotation_speed * dt);
+        } else if keys.pressed(KeyCode::ArrowRight) {
+            tf.rotate_axis(Dir3::Y, -params.rotation_speed * dt);
         }
-        let direction = transform.rotation * Vec3::Z;
-        transform.translation += direction * player.speed * dt;
+
+        let forward = tf.rotation * Vec3::Z;
+        tf.translation += forward * player.speed * dt;
     }
 }
