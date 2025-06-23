@@ -18,7 +18,7 @@ pub struct GameParams {
 impl Default for GameParams {
     fn default() -> Self {
         Self {
-            max_speed: 1.0,
+            max_speed: 10.0,
             acceleration: 5.0,
             brake_deceleration: 10.0,
             friction: 4.0,

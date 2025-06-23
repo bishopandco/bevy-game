@@ -29,7 +29,6 @@ fn player_movement_system(
     let dt = time.delta_secs();
 
     for (mut tf, mut player) in &mut q {
-        // forward / back
         if keys.pressed(KeyCode::ArrowUp) {
             player.speed =
                 (player.speed + params.acceleration * dt).clamp(-params.max_speed, params.max_speed);
@@ -41,7 +40,6 @@ fn player_movement_system(
                 * (player.speed.abs() - params.friction * dt).max(0.0);
         }
 
-        // rotate
         if keys.pressed(KeyCode::ArrowLeft) {
             tf.rotate_axis(Dir3::Y,  params.rotation_speed * dt);
         } else if keys.pressed(KeyCode::ArrowRight) {
