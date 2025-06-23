@@ -3,7 +3,6 @@ name = "game_demo"
 version = "0.1.0"
 edition = "2021"
 
-# Tweak this if you publish to crates.io
 authors = ["Michael Bishop <michael@bishopand.com>"]
 description = "Bevy"
 license = "MIT"
@@ -11,6 +10,8 @@ license = "MIT"
 [dependencies]
 # Bevy core. `dynamic` = faster compile times on desktop; remove if you need static.
 bevy = { version = "0.16.0-rc1"}
+bevy_rapier3d = "0.29.0"
+bevy-inspector-egui = "0.31.0"
 
 # Optional physics / debug helpers (comment out until you need them)
 # bevy_rapier3d = "0.25"        # 3D physics
