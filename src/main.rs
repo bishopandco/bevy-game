@@ -18,7 +18,6 @@ fn main() {
         .add_plugins((RapierPhysicsPlugin::<NoUserData>::default(), RapierDebugRenderPlugin::default()))
         .add_systems(Startup, |mut commands: Commands, mut conf_q: Query<&mut RapierConfiguration>| {
             if let Ok(mut conf) = conf_q.get_single_mut() {
-                // plugin already spawned one—just mutate it
                 conf.gravity = Vec3::new(0.0, -9.81, 0.0);
             } else {
                 // no config yet? spawn our own
