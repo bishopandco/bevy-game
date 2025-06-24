@@ -11,43 +11,29 @@ impl Plugin for WorldPlugin {
     }
 }
 
-struct ColliderBundle {
-    collider: Collider
-}
-
 fn setup_world(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    // ── ground plane ──
-    let ground_mesh = meshes.add(Plane3d::default().mesh().size(100.0, 100.0));
-    commands
-        .spawn(Mesh3d(ground_mesh))
-        .insert(MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: Color::srgb(0.2, 0.8, 0.2),
-            ..default()
-        })))
-        .insert(Transform::IDENTITY);
-        // .insert(Collider::halfspace(Vec3::Y));
-
     // ── terrain glb ──
     let terrain: Handle<Scene> = asset_server.load("models/terrain.glb#Scene0");
 
     commands
         .spawn(SceneRoot(terrain))
-        .insert(Transform::IDENTITY)
-        .insert(Collider::cuboid(50.0, 20.0, 50.0));
+        .insert(Transform::from_xyz(0.0, 0.0, 0.0))
+        .insert(GlobalTransform::default())
+        .insert(RigidBody::Fixed)
+        .insert(AsyncSceneCollider::default());
 
-    // ── ambient light ──
+    // ── lighting ──
     commands.insert_resource(AmbientLight {
         color: Color::WHITE,
         brightness: 0.5,
         affects_lightmapped_meshes: true,
     });
 
-    // ── directional "sun" ──
     commands
         .spawn(DirectionalLight {
             illuminance: 3_000.0,
@@ -56,7 +42,7 @@ fn setup_world(
         })
         .insert(Transform::from_xyz(5.0, 10.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y));
 
-    // ── player cube ──
+    // ── player ──
     let player_mesh = meshes.add(Cuboid::default());
     commands
         .spawn(Mesh3d(player_mesh))
@@ -64,7 +50,7 @@ fn setup_world(
             base_color: Color::srgb(0.2, 0.8, 0.2),
             ..default()
         })))
-        .insert(Transform::from_xyz(0.0, 1.0, 0.0))
+        .insert(Transform::from_xyz(0.0, 2.0, 0.0))
         .insert(RigidBody::KinematicPositionBased)
         .insert(Collider::capsule_y(1.0, 0.5))
         .insert(KinematicCharacterController::default())
