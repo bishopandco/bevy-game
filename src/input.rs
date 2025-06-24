@@ -25,15 +25,17 @@ pub fn player_movement_system(
     keys: Res<ButtonInput<KeyCode>>,
     params: Res<GameParams>,
     mut spatial: SpatialQuery,
-    mut q: Query<(&mut Transform, &mut Player)>,
+    // grab the entity ID so we can exclude it from queries
+    mut q: Query<(Entity, &mut Transform, &mut Player)>,
 ) {
     const HALF_HEIGHT: f32 = 0.5;
     const RAY_OFFSET: f32 = 0.02;
     const SNAP_EPS: f32 = 0.005;
 
-    for (mut tf, mut plyr) in &mut q {
+    for (entity, mut tf, mut plyr) in &mut q {
         let dt = time.delta_secs();
 
+        // ---- input-driven speed ----
         if keys.pressed(KeyCode::ArrowUp) {
             plyr.speed = (plyr.speed + params.acceleration * dt).min(params.max_speed);
         } else if keys.pressed(KeyCode::ArrowDown) {
@@ -43,6 +45,7 @@ pub fn player_movement_system(
             plyr.speed = plyr.speed.signum() * slowed;
         }
 
+        // ---- yaw ----
         if keys.pressed(KeyCode::ArrowLeft) {
             plyr.yaw += params.yaw_rate * dt;
         }
@@ -50,18 +53,15 @@ pub fn player_movement_system(
             plyr.yaw -= params.yaw_rate * dt;
         }
 
+        // ---- gravity ----
         plyr.vertical_vel -= params.gravity * dt;
 
+        // ---- ground snap ----
         let ray_start = tf.translation + Vec3::Y * (-HALF_HEIGHT + RAY_OFFSET);
         let max_dist = RAY_OFFSET + HALF_HEIGHT; // just past the feet
+        let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
 
-        let ground_hit = spatial.cast_ray(
-            ray_start,
-            Dir3::NEG_Y,
-            max_dist + 0.5,
-            false,
-            &Default::default(),
-        );
+        let ground_hit = spatial.cast_ray(ray_start, Dir3::NEG_Y, max_dist + 0.5, false, &filter);
 
         if let Some(hit) = ground_hit {
             if hit.distance < max_dist - SNAP_EPS {
@@ -70,6 +70,7 @@ pub fn player_movement_system(
             }
         }
 
+        // ---- horizontal movement & slope handling ----
         let yaw_rot = Quat::from_axis_angle(Vec3::Y, plyr.yaw);
         let forward_world = yaw_rot * Vec3::Z;
 
@@ -85,7 +86,6 @@ pub fn player_movement_system(
 
             let shape = Collider::cuboid(0.5, 0.5, 0.5);
             let config = ShapeCastConfig::from_max_distance(dist);
-            let filter = SpatialQueryFilter::default();
 
             if let Some(hit) =
                 spatial.cast_shape(&shape, tf.translation, tf.rotation, dir, &config, &filter)
@@ -93,14 +93,16 @@ pub fn player_movement_system(
                 // stop just shy of the wall
                 let allowed = (hit.distance - 0.01).max(0.0);
                 tf.translation += dir_vec * allowed;
-                plyr.speed = 0.0; // optional: zero momentum on impact
+                plyr.speed = 0.0; // zero momentum on impact
             } else {
                 tf.translation += step_h;
             }
         }
 
+        // ---- vertical position integration ----
         tf.translation.y += plyr.vertical_vel * dt;
 
+        // ---- align to ground normal ----
         tf.rotation = Quat::from_rotation_arc(Vec3::Y, ground_n) * yaw_rot;
     }
 }
