@@ -41,5 +41,5 @@ fn setup_world(
         .insert(RigidBody::KinematicPositionBased)
         .insert(Collider::cuboid(0.5, 0.5, 0.5))
         .insert(KinematicCharacterController::default())
-        .insert(Player { speed: 0.0, vertical_vel: 0.0 });
+        .insert(Player { speed: 0.0, vertical_vel: 0.0, yaw: 0.0 });
 }
