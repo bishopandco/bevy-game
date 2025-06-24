@@ -13,6 +13,8 @@ pub struct GameParams {
     pub look_ahead: f32,
     pub mini_map_size: f32,
     pub mini_map_height: f32,
+    pub brake_acceleration: f32,
+    pub gravity: f32,
 }
 
 impl Default for GameParams {
@@ -29,6 +31,8 @@ impl Default for GameParams {
             look_ahead: 6.0,
             mini_map_size: 40.0,
             mini_map_height: 120.0,
+            brake_acceleration: 20.0,
+            gravity: 9.81,
         }
     }
 }

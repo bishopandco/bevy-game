@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy::prelude::{Cuboid, Plane3d};
 use bevy_rapier3d::prelude::*;
 use crate::input::Player;
 
@@ -17,7 +16,7 @@ fn setup_world(
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    // ── terrain glb ──
+    // ── terrain ──
     let terrain: Handle<Scene> = asset_server.load("models/terrain.glb#Scene0");
 
     commands
@@ -28,31 +27,19 @@ fn setup_world(
         .insert(AsyncSceneCollider::default());
 
     // ── lighting ──
-    commands.insert_resource(AmbientLight {
-        color: Color::WHITE,
-        brightness: 0.5,
-        affects_lightmapped_meshes: true,
-    });
-
+    commands.insert_resource(AmbientLight { brightness: 0.5, ..default() });
     commands
-        .spawn(DirectionalLight {
-            illuminance: 3_000.0,
-            shadows_enabled: true,
-            ..default()
-        })
+        .spawn(DirectionalLight { illuminance: 3_000.0, shadows_enabled: true, ..default() })
         .insert(Transform::from_xyz(5.0, 10.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y));
 
     // ── player ──
-    let player_mesh = meshes.add(Cuboid::default());
+    let mesh = meshes.add(Cuboid::default());
     commands
-        .spawn(Mesh3d(player_mesh))
-        .insert(MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: Color::srgb(0.2, 0.8, 0.2),
-            ..default()
-        })))
-        .insert(Transform::from_xyz(0.0, 2.0, 0.0))
+        .spawn(Mesh3d(mesh))
+        .insert(MeshMaterial3d(materials.add(Color::srgb(0.2, 0.8, 0.2))))
+        .insert(Transform::from_xyz(0.0, 3.0, 0.0))
         .insert(RigidBody::KinematicPositionBased)
-        .insert(Collider::capsule_y(1.0, 0.5))
+        .insert(Collider::cuboid(0.5, 0.5, 0.5))
         .insert(KinematicCharacterController::default())
-        .insert(Player { speed: 0.0 });
+        .insert(Player { speed: 0.0, vertical_vel: 0.0 });
 }
