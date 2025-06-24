@@ -1,18 +1,10 @@
-use std::cmp::Ordering;
 use crate::globals::GameParams;
+use avian3d::prelude::*;
 use bevy::input::{keyboard::KeyCode, ButtonInput};
 use bevy::prelude::*;
-use bevy_rapier3d::control::CharacterCollision;
-use bevy_rapier3d::prelude::{
-    KinematicCharacterController,
-    KinematicCharacterControllerOutput,
-};
 
 const FALL_THRESHOLD: f32 = -10.0;
 const RESPAWN_POS: Vec3 = Vec3::new(0.0, 3.0, 0.0);
-
-const HORIZONTAL_BOUNCE_DAMPING: f32 = 0.1;
-const VERTICAL_BOUNCE_DAMPING: f32 = 0.1;
 
 #[derive(Component)]
 pub struct Player {
@@ -24,133 +16,95 @@ pub struct Player {
 pub struct PlayerControlPlugin;
 impl Plugin for PlayerControlPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            (
-                player_movement_system,
-                slope_adjust_system.after(player_movement_system),
-                collision_response_system.after(slope_adjust_system),
-                fall_reset_system,
-            ),
-        );
+        app.add_systems(FixedUpdate, (player_movement_system, fall_reset_system));
     }
 }
 
-fn player_movement_system(
+pub fn player_movement_system(
     time: Res<Time>,
-    params: Res<GameParams>,
     keys: Res<ButtonInput<KeyCode>>,
-    mut q: Query<(&mut Transform, &mut Player, &mut KinematicCharacterController)>,
+    params: Res<GameParams>,
+    mut spatial: SpatialQuery,
+    mut q: Query<(&mut Transform, &mut Player)>,
 ) {
-    let dt = time.delta_secs();
+    const HALF_HEIGHT: f32 = 0.5;
+    const RAY_OFFSET: f32 = 0.02;
+    const SNAP_EPS: f32 = 0.005;
 
-    for (mut tf, mut plyr, mut ctrl) in &mut q {
+    for (mut tf, mut plyr) in &mut q {
+        let dt = time.delta_secs();
+
         if keys.pressed(KeyCode::ArrowUp) {
             plyr.speed = (plyr.speed + params.acceleration * dt).min(params.max_speed);
         } else if keys.pressed(KeyCode::ArrowDown) {
             plyr.speed = (plyr.speed - params.brake_acceleration * dt).max(-params.max_speed);
         } else {
-            plyr.speed =
-                plyr.speed.signum() * (plyr.speed.abs() - params.friction * dt).max(0.0);
+            let slowed = (plyr.speed.abs() - params.friction * dt).max(0.0);
+            plyr.speed = plyr.speed.signum() * slowed;
         }
 
         if keys.pressed(KeyCode::ArrowLeft) {
-            plyr.yaw += params.rotation_speed * dt;
-        } else if keys.pressed(KeyCode::ArrowRight) {
-            plyr.yaw -= params.rotation_speed * dt;
+            plyr.yaw += params.yaw_rate * dt;
         }
+        if keys.pressed(KeyCode::ArrowRight) {
+            plyr.yaw -= params.yaw_rate * dt;
+        }
+
         plyr.vertical_vel -= params.gravity * dt;
 
-        tf.rotation = Quat::from_axis_angle(Vec3::Y, plyr.yaw);
+        let ray_start = tf.translation + Vec3::Y * (-HALF_HEIGHT + RAY_OFFSET);
+        let max_dist = RAY_OFFSET + HALF_HEIGHT; // just past the feet
 
-        let forward = tf.rotation * Vec3::Z;
-        let horiz = forward * plyr.speed * dt;
-        let vertical = Vec3::Y * plyr.vertical_vel * dt;
+        let ground_hit = spatial.cast_ray(
+            ray_start,
+            Dir3::NEG_Y,
+            max_dist + 0.5,
+            false,
+            &Default::default(),
+        );
 
-        ctrl.translation = Some(horiz + vertical);
-    }
-}
-
-fn slope_adjust_system(
-    mut q: Query<(
-        &mut Transform,
-        &mut Player,
-        Option<&KinematicCharacterControllerOutput>,
-    )>,
-    params: Res<GameParams>,
-) {
-
-    fn find_ground_normal(collisions: &[CharacterCollision]) -> Vec3 {
-        collisions
-            .iter()
-            .filter_map(|c| {
-                c.hit
-                    .details
-                    .as_ref()
-                    .map(|d| d.normal2)
-                    .map(|v| Vec3::new(v.x, v.y, v.z))
-            })
-            .filter(|n| n.y > 0.1)
-            .max_by(|a, b| a.y.partial_cmp(&b.y).unwrap_or(Ordering::Equal))
-            .unwrap_or(Vec3::Y)               
-            .normalize()
-    }
-
-    for (mut tf, mut plyr, out_opt) in &mut q {
-        let Some(out) = out_opt else { continue };
-        if !out.grounded {
-            continue;
-        }
-
-        // Pick the steepest *up-facing* collision normal.
-        let ground_normal = find_ground_normal(&out.collisions);
-
-        // ─ tilt player to match ramp ─
-        let tilt = Quat::from_rotation_arc(Vec3::Y, ground_normal);
-        tf.rotation = tilt * Quat::from_axis_angle(Vec3::Y, plyr.yaw);
-
-
-        let slope_dot = ground_normal.y;
-        let uphill_cutoff = 0.7;
-
-        let accel_scale = if slope_dot >= uphill_cutoff {
-            1.0
-        } else {
-            let t = (uphill_cutoff - slope_dot) / uphill_cutoff;
-            1.0 - t * 0.7
-        };
-
-
-
-
-        plyr.speed = plyr
-            .speed
-            .clamp(-params.max_speed * accel_scale, params.max_speed * accel_scale);
-    }
-}
-
-// 3. Bump + bounce
-fn collision_response_system(
-    mut q: Query<(&mut Player, Option<&KinematicCharacterControllerOutput>)>,
-) {
-    for (mut plyr, out_opt) in &mut q {
-        let Some(out) = out_opt else { continue };
-
-        if !out.collisions.is_empty() {
-            plyr.speed *= HORIZONTAL_BOUNCE_DAMPING;
-
-            if plyr.vertical_vel < 0.0 {
-                plyr.vertical_vel = -(plyr.vertical_vel * VERTICAL_BOUNCE_DAMPING);
+        if let Some(hit) = ground_hit {
+            if hit.distance < max_dist - SNAP_EPS {
+                tf.translation.y += max_dist - hit.distance;
+                plyr.vertical_vel = 0.0;
             }
         }
 
-        if out.grounded {
-            plyr.vertical_vel = 0.0;
+        let yaw_rot = Quat::from_axis_angle(Vec3::Y, plyr.yaw);
+        let forward_world = yaw_rot * Vec3::Z;
+
+        let ground_n = ground_hit.map(|h| h.normal).unwrap_or(Vec3::Y);
+        let forward_ground =
+            (forward_world - ground_n * forward_world.dot(ground_n)).normalize_or_zero();
+
+        let step_h = forward_ground * plyr.speed * dt;
+        if step_h.length_squared() > f32::EPSILON {
+            let dist = step_h.length();
+            let dir_vec = step_h / dist;
+            let dir = Dir3::new_unchecked(dir_vec);
+
+            let shape = Collider::cuboid(0.5, 0.5, 0.5);
+            let config = ShapeCastConfig::from_max_distance(dist);
+            let filter = SpatialQueryFilter::default();
+
+            if let Some(hit) =
+                spatial.cast_shape(&shape, tf.translation, tf.rotation, dir, &config, &filter)
+            {
+                // stop just shy of the wall
+                let allowed = (hit.distance - 0.01).max(0.0);
+                tf.translation += dir_vec * allowed;
+                plyr.speed = 0.0; // optional: zero momentum on impact
+            } else {
+                tf.translation += step_h;
+            }
         }
+
+        tf.translation.y += plyr.vertical_vel * dt;
+
+        tf.rotation = Quat::from_rotation_arc(Vec3::Y, ground_n) * yaw_rot;
     }
 }
 
-// 4. Yeet-guard
 fn fall_reset_system(mut q: Query<(&mut Transform, &mut Player)>) {
     for (mut tf, mut plyr) in &mut q {
         if tf.translation.y < FALL_THRESHOLD {

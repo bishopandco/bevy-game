@@ -15,6 +15,7 @@ pub struct GameParams {
     pub mini_map_height: f32,
     pub brake_acceleration: f32,
     pub gravity: f32,
+    pub yaw_rate: f32,
 }
 
 impl Default for GameParams {
@@ -33,6 +34,7 @@ impl Default for GameParams {
             mini_map_height: 120.0,
             brake_acceleration: 20.0,
             gravity: 9.81,
+            yaw_rate: std::f32::consts::PI / 2.0, // 90 degrees per second
         }
     }
 }
