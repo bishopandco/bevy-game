@@ -1,4 +1,4 @@
-use crate::globals::GameParams;
+use crate::globals::{GameParams, PLAYER_HALF_EXTENTS};
 use avian3d::prelude::*;
 use bevy::input::{keyboard::KeyCode, ButtonInput};
 use bevy::prelude::*;
@@ -84,12 +84,21 @@ pub fn player_movement_system(
             let dir_vec = step_h / dist;
             let dir = Dir3::new_unchecked(dir_vec);
 
-            let shape = Collider::cuboid(0.5, 0.5, 0.5);
-            let config = ShapeCastConfig::from_max_distance(dist);
+            let shape = Collider::cuboid(
+                PLAYER_HALF_EXTENTS.x,
+                PLAYER_HALF_EXTENTS.y,
+                PLAYER_HALF_EXTENTS.z,
+            );
+            let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
 
-            if let Some(hit) =
-                spatial.cast_shape(&shape, tf.translation, tf.rotation, dir, &config, &filter)
-            {
+            if let Some(hit) = spatial.cast_shape(
+                &shape,
+                tf.translation,
+                tf.rotation,
+                dir,
+                &ShapeCastConfig::from_max_distance(dist),
+                &filter,
+            ) {
                 // stop just shy of the wall
                 let allowed = (hit.distance - 0.01).max(0.0);
                 tf.translation += dir_vec * allowed;

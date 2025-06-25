@@ -38,3 +38,5 @@ impl Default for GameParams {
         }
     }
 }
+
+pub const PLAYER_HALF_EXTENTS: Vec3 = Vec3::new(0.5, 0.1, 1.5);
