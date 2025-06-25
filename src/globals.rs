@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+pub const PLAYER_HALF_EXTENTS: Vec3 = Vec3::new(5.0, 1.0, 10.0);
+
 #[derive(Resource)]
 pub struct GameParams {
     pub max_speed: f32,
@@ -34,9 +36,7 @@ impl Default for GameParams {
             mini_map_height: 120.0,
             brake_acceleration: 20.0,
             gravity: 9.81,
-            yaw_rate: std::f32::consts::PI / 2.0, // 90 degrees per second
+            yaw_rate: std::f32::consts::PI / 2.0
         }
     }
 }
-
-pub const PLAYER_HALF_EXTENTS: Vec3 = Vec3::new(0.5, 0.1, 1.5);

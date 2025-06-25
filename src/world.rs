@@ -1,9 +1,10 @@
 use crate::input::Player;
 use avian3d::prelude::{
-    Collider, ColliderConstructor, ColliderConstructorHierarchy, LinearVelocity, RigidBody,
+    ColliderConstructor, ColliderConstructorHierarchy, LinearVelocity, RigidBody,
 };
 use bevy::prelude::*;
-use crate::globals::PLAYER_HALF_EXTENTS;
+use bevy::render::mesh::MeshAabb;
+use bevy::render::primitives::Aabb;
 
 pub struct WorldPlugin;
 
@@ -19,16 +20,18 @@ fn setup_world(
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    let terrain: Handle<Scene> = asset_server.load("models/terrain.glb#Scene0");
+    /* ── terrain ─────────────────────────────────────── */
+    let terrain_scene: Handle<Scene> = asset_server.load("models/terrain.glb#Scene0");
     commands
-        .spawn(SceneRoot(terrain))
-        .insert(Transform::from_xyz(0.0, 0.0, 0.0))
+        .spawn(SceneRoot(terrain_scene))
+        .insert(Transform::default())
         .insert(GlobalTransform::default())
         .insert(ColliderConstructorHierarchy::new(
             ColliderConstructor::TrimeshFromMesh,
         ))
         .insert(RigidBody::Static);
 
+    /* ── lighting ────────────────────────────────────── */
     commands.insert_resource(AmbientLight {
         brightness: 0.5,
         ..default()
@@ -41,25 +44,34 @@ fn setup_world(
         })
         .insert(Transform::from_xyz(5.0, 10.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y));
 
-    let mesh = meshes.add(Cuboid::new(
-        PLAYER_HALF_EXTENTS.x * 2.0,
-        PLAYER_HALF_EXTENTS.y * 2.0,
-        PLAYER_HALF_EXTENTS.z * 2.0,
-    ));
+    /* ── player car ──────────────────────────────────── */
+    let mesh_handle: Handle<Mesh> = asset_server.load("models/car.glb#Mesh0/Primitive0");
+
+    // Fallback size until mesh finishes loading
+    let default_half_extents = Vec3::splat(0.5);
+
+    // Compute half-extents manually (Aabb::half_extents was removed in 0.16)
+    let half_extents = meshes
+        .get(&mesh_handle)
+        .and_then(|m| m.compute_aabb())
+        .map(|aabb: Aabb| (aabb.max() - aabb.min()) * 0.5) // ← half the full size
+        .unwrap_or(Vec3A::from(default_half_extents));
+
+    let car_scene: Handle<Scene> = asset_server.load("models/car.glb#Scene0");
     commands
-        .spawn(Mesh3d(mesh))
-        .insert(MeshMaterial3d(materials.add(Color::srgb(0.2, 0.8, 0.2))))
+        .spawn(SceneRoot(car_scene))
         .insert(Transform::from_xyz(0.0, 3.0, 0.0))
-        .insert(RigidBody::Kinematic)
-        .insert(Collider::cuboid(
-            PLAYER_HALF_EXTENTS.x,
-            PLAYER_HALF_EXTENTS.y,
-            PLAYER_HALF_EXTENTS.z,
+        .insert(GlobalTransform::default())
+        // Use the real mesh for collision
+        .insert(ColliderConstructorHierarchy::new(
+            ColliderConstructor::TrimeshFromMesh,
         ))
+        .insert(RigidBody::Kinematic)
         .insert(LinearVelocity::ZERO)
         .insert(Player {
             speed: 0.0,
             vertical_vel: 0.0,
             yaw: 0.0,
+            half_extents: Vec3::from(half_extents),
         });
 }
