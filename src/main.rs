@@ -1,18 +1,12 @@
-use crate::camera::CameraPlugin;
-use crate::globals::GameParams;
-use crate::input::PlayerControlPlugin;
-use crate::minimap::MiniMapPlugin;
-use crate::world::WorldPlugin;
-use crate::debug_ui::DebugUiPlugin;
+use game_demo::camera::CameraPlugin;
+use game_demo::globals::GameParams;
+use game_demo::input::PlayerControlPlugin;
+use game_demo::minimap::MiniMapPlugin;
+use game_demo::world::WorldPlugin;
+use game_demo::debug_ui::DebugUiPlugin;
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
-mod camera;
-mod debug_ui;
-mod globals;
-mod input;
-mod minimap;
-mod world;
 
 fn main() {
     App::new()
