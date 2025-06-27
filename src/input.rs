@@ -29,7 +29,7 @@ impl Plugin for PlayerControlPlugin {
     }
 }
 
-fn player_controller(
+pub fn player_controller(
     time: Res<Time>,
     keys: Res<ButtonInput<KeyCode>>,
     params: Res<GameParams>,
@@ -112,13 +112,18 @@ fn player_controller(
 
         /* ground snap ------------------------------------------------------ */
         plyr.grounded = false;
+
+        let cfg = ShapeCastConfig {
+            compute_contact_on_penetration: true,
+            ..ShapeCastConfig::from_max_distance(STEP_HEIGHT + SKIN)
+        };
+        
         if let Some(hit) = spatial.cast_shape(
             &col,
             tf.translation + Vec3::Y * STEP_HEIGHT,
             tf.rotation,
             Dir3::NEG_Y,
-            &ShapeCastConfig::from_max_distance(STEP_HEIGHT + SKIN)
-                .with_compute_contact_on_penetration(true),
+            &cfg,
             &filter,
         ) {
             // if bottom is above ground, step **down**
