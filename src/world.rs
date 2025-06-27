@@ -73,5 +73,6 @@ fn setup_world(
             vertical_vel: 0.0,
             yaw: 0.0,
             half_extents: Vec3::from(half_extents),
+            grounded: true,
         });
 }
