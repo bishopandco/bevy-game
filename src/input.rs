@@ -6,7 +6,6 @@ use bevy::{
     prelude::*,
 };
 
-
 const STEP_HEIGHT: f32 = 0.35;
 const MAX_SLOPE_COS: f32 = 0.707; // 45 °
 const SKIN: f32 = 0.03;
@@ -86,17 +85,29 @@ fn player_controller(
                 },
                 &filter,
             ) {
+                // move right up to the contact
                 tf.translation += dir.as_vec3() * (hit.distance - SKIN).max(0.0);
 
+                // ── collision response ─────────────────────────────────────────────
+                // gentle slope? treat as ground; otherwise stop (or bounce)
                 if hit.normal1.y > MAX_SLOPE_COS {
-                    // gentle slope ⇒ treat as ground
                     plyr.grounded = true;
                     remaining = Vec3::ZERO;
-                    break;
-                }
+                    // optional: zero horizontal speed when you *land* on a slope
+                    // plyr.speed = 0.0;
+                } else {
+                    // hit a wall -> kill speed and/or bounce
+                    const BOUNCE: f32 = 0.0; // 0 = stop, 1 = full elastic bounce
+                    plyr.speed = -plyr.speed * BOUNCE;
 
-                // wall slide
-                remaining = remaining - hit.normal1 * remaining.dot(hit.normal1);
+                    // reflect the remaining vector for a bounce, or zero it out to stop
+                    if BOUNCE > 0.0 {
+                        let refl = remaining - 2.0 * remaining.dot(hit.normal1) * hit.normal1;
+                        remaining = refl * BOUNCE;
+                    } else {
+                        remaining = Vec3::ZERO;
+                    }
+                }
             } else {
                 tf.translation += remaining;
                 break;
@@ -112,14 +123,13 @@ fn player_controller(
         tf.translation.y += plyr.vertical_vel * dt;
 
         /* ground snap ------------------------------------------------------ */
-        info!("Player Y before ground snap: {}", tf.translation.y);
 
         let cfg = ShapeCastConfig {
             compute_contact_on_penetration: true,
             max_distance: 100.0,
             ..Default::default()
         };
-        
+
         if let Some(hit) = spatial.cast_shape(
             &col,
             tf.translation + Vec3::Y * (plyr.half_extents.y + STEP_HEIGHT),
@@ -128,12 +138,10 @@ fn player_controller(
             &cfg,
             &filter,
         ) {
-            info!("Ground snap hit detected! Hit point Y: {}", hit.point1.y);
+            // stick to the ground
             tf.translation.y = hit.point1.y + plyr.half_extents.y + SKIN;
             plyr.grounded = true;
-            info!("Player Y after ground snap (hit): {}", tf.translation.y);
-        } else {
-            info!("No ground snap hit detected.");
+            plyr.vertical_vel = 0.0; // ← stop the downward build-up
         }
 
         /* tilt to ground --------------------------------------------------- */
