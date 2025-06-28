@@ -48,7 +48,7 @@ fn follow_camera_system(
     mut cam_q: Query<(&FollowCamera, &mut Transform)>,
     target_q: Query<&Transform, (With<Player>, Without<FollowCamera>)>,
 ) {
-    let Ok(target_tf) = target_q.get_single() else { return };
+    let Ok(target_tf) = target_q.single() else { return };
 
     for (follow, mut cam_tf) in &mut cam_q {
         let forward = target_tf.rotation * Vec3::Z;

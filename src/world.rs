@@ -1,4 +1,6 @@
+use avian3d::prelude::Collider;
 use crate::input::Player;
+use crate::globals::PLAYER_HALF_EXTENTS;
 use avian3d::prelude::{
     ColliderConstructor, ColliderConstructorHierarchy, LinearVelocity, RigidBody,
 };
@@ -16,8 +18,8 @@ impl Plugin for WorldPlugin {
 
 fn setup_world(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    meshes: Res<Assets<Mesh>>,
+    _materials: Res<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
     /* ── terrain ─────────────────────────────────────── */
@@ -26,9 +28,7 @@ fn setup_world(
         .spawn(SceneRoot(terrain_scene))
         .insert(Transform::default())
         .insert(GlobalTransform::default())
-        .insert(ColliderConstructorHierarchy::new(
-            ColliderConstructor::TrimeshFromMesh,
-        ))
+        .insert(Collider::cuboid(100.0, 0.1, 100.0))
         .insert(RigidBody::Static);
 
     /* ── lighting ────────────────────────────────────── */
@@ -51,7 +51,7 @@ fn setup_world(
     let default_half_extents = Vec3::splat(0.5);
 
     // Compute half-extents manually (Aabb::half_extents was removed in 0.16)
-    let half_extents = meshes
+    let _half_extents = meshes
         .get(&mesh_handle)
         .and_then(|m| m.compute_aabb())
         .map(|aabb: Aabb| (aabb.max() - aabb.min()) * 0.5) // ← half the full size
@@ -60,19 +60,16 @@ fn setup_world(
     let car_scene: Handle<Scene> = asset_server.load("models/car.glb#Scene0");
     commands
         .spawn(SceneRoot(car_scene))
-        .insert(Transform::from_xyz(0.0, 3.0, 0.0))
+        .insert(Transform::from_xyz(0.0, 1.5, 0.0))
         .insert(GlobalTransform::default())
-        // Use the real mesh for collision
-        .insert(ColliderConstructorHierarchy::new(
-            ColliderConstructor::TrimeshFromMesh,
-        ))
+        
         .insert(RigidBody::Kinematic)
         .insert(LinearVelocity::ZERO)
         .insert(Player {
             speed: 0.0,
             vertical_vel: 0.0,
             yaw: 0.0,
-            half_extents: Vec3::from(half_extents),
-            grounded: true,
+            half_extents: PLAYER_HALF_EXTENTS,
+            grounded: false,
         });
 }

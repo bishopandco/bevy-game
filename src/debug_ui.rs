@@ -39,7 +39,7 @@ fn debug_ui(
 
         // ---- Respawn button ----
         if ui.button("Respawn").clicked() {
-            respawn_writer.send(RespawnEvent);
+            respawn_writer.write(RespawnEvent);
         }
 
         // ---- sliders ----

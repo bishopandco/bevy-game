@@ -6,12 +6,12 @@ use bevy::{
     prelude::*,
 };
 
-const GRAVITY: f32 = 30.0;
+
 const STEP_HEIGHT: f32 = 0.35;
 const MAX_SLOPE_COS: f32 = 0.707; // 45 °
 const SKIN: f32 = 0.03;
 const FALL_RESET_Y: f32 = -10.0;
-const RESPAWN_POS: Vec3 = Vec3::new(0.0, 3.0, 0.0);
+const RESPAWN_POS: Vec3 = Vec3::new(0.0, 1.5, 0.0);
 
 #[derive(Component, Default)]
 pub struct Player {
@@ -33,11 +33,12 @@ fn player_controller(
     time: Res<Time>,
     keys: Res<ButtonInput<KeyCode>>,
     params: Res<GameParams>,
-    mut spatial: SpatialQuery,
+    spatial: SpatialQuery,
     mut q: Query<(Entity, &mut Transform, &mut Player)>,
 ) {
     for (entity, mut tf, mut plyr) in &mut q {
         let dt = time.delta_secs();
+        plyr.grounded = false;
 
         /* input ------------------------------------------------------------ */
         if keys.pressed(KeyCode::ArrowUp) {
@@ -104,37 +105,35 @@ fn player_controller(
 
         /* gravity --------------------------------------------------------- */
         if !plyr.grounded {
-            plyr.vertical_vel -= GRAVITY * dt;
+            plyr.vertical_vel -= params.gravity * dt;
         } else {
             plyr.vertical_vel = 0.0;
         }
         tf.translation.y += plyr.vertical_vel * dt;
 
         /* ground snap ------------------------------------------------------ */
-        plyr.grounded = false;
-
+        info!("Player Y before ground snap: {}", tf.translation.y);
 
         let cfg = ShapeCastConfig {
             compute_contact_on_penetration: true,
-            ..ShapeCastConfig::from_max_distance(STEP_HEIGHT + SKIN)
+            max_distance: 100.0,
+            ..Default::default()
         };
         
         if let Some(hit) = spatial.cast_shape(
             &col,
-            tf.translation + Vec3::Y * STEP_HEIGHT,
+            tf.translation + Vec3::Y * (plyr.half_extents.y + STEP_HEIGHT),
             tf.rotation,
             Dir3::NEG_Y,
             &cfg,
             &filter,
         ) {
-            // if bottom is above ground, step **down**
-            if hit.distance > SKIN {
-                tf.translation.y += (hit.distance - STEP_HEIGHT).min(0.0);
-            } else {
-                // penetrating: push **up** just until clear
-                tf.translation.y += SKIN - hit.distance;
-            }
+            info!("Ground snap hit detected! Hit point Y: {}", hit.point1.y);
+            tf.translation.y = hit.point1.y + plyr.half_extents.y + SKIN;
             plyr.grounded = true;
+            info!("Player Y after ground snap (hit): {}", tf.translation.y);
+        } else {
+            info!("No ground snap hit detected.");
         }
 
         /* tilt to ground --------------------------------------------------- */
