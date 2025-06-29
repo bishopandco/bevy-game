@@ -1,10 +1,7 @@
-use crate::globals::PLAYER_HALF_EXTENTS;
 use crate::input::Player;
-use avian3d::prelude::Collider;
+use avian3d::prelude::{Collider, ColliderConstructor, ColliderConstructorHierarchy};
 use avian3d::prelude::{LinearVelocity, RigidBody};
 use bevy::prelude::*;
-use bevy::render::mesh::MeshAabb;
-use bevy::render::primitives::Aabb;
 
 pub struct WorldPlugin;
 
@@ -16,16 +13,18 @@ impl Plugin for WorldPlugin {
 
 fn setup_world(
     mut commands: Commands,
-    meshes: Res<Assets<Mesh>>,
-    _materials: Res<Assets<StandardMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    let terrain_scene: Handle<Scene> = asset_server.load("models/terrain.glb#Scene0");
+    let terrain: Handle<Scene> = asset_server.load("models/terrain.glb#Scene0");
     commands
-        .spawn(SceneRoot(terrain_scene))
-        .insert(Transform::default())
+        .spawn(SceneRoot(terrain))
+        .insert(Transform::from_xyz(0.0, 0.0, 0.0))
         .insert(GlobalTransform::default())
-        .insert(Collider::cuboid(100.0, 0.1, 100.0))
+        .insert(ColliderConstructorHierarchy::new(
+            ColliderConstructor::TrimeshFromMesh,
+        ))
         .insert(RigidBody::Static);
 
     commands.insert_resource(AmbientLight {
@@ -40,28 +39,27 @@ fn setup_world(
         })
         .insert(Transform::from_xyz(5.0, 10.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y));
 
-    let mesh_handle: Handle<Mesh> = asset_server.load("models/car.glb#Mesh0/Primitive0");
-
-    let default_half_extents = Vec3::splat(0.5);
-
-    let _half_extents = meshes
-        .get(&mesh_handle)
-        .and_then(|m| m.compute_aabb())
-        .map(|aabb: Aabb| (aabb.max() - aabb.min()) * 0.5) // ← half the full size
-        .unwrap_or(Vec3A::from(default_half_extents));
-
-    let car_scene: Handle<Scene> = asset_server.load("models/car.glb#Scene0");
+    let mesh = meshes.add(Cuboid::new(
+        0.25,
+        0.25,
+        0.25,
+    ));
     commands
-        .spawn(SceneRoot(car_scene))
-        .insert(Transform::from_xyz(0.0, 1.5, 0.0))
-        .insert(GlobalTransform::default())
+        .spawn(Mesh3d(mesh))
+        .insert(MeshMaterial3d(materials.add(Color::srgb(0.2, 0.8, 0.2))))
+        .insert(Transform::from_xyz(0.0, 3.0, 0.0))
         .insert(RigidBody::Kinematic)
+        .insert(Collider::cuboid(
+            0.25,
+            0.25,
+            0.25
+        ))
         .insert(LinearVelocity::ZERO)
         .insert(Player {
             speed: 0.0,
             vertical_vel: 0.0,
             yaw: 0.0,
-            half_extents: PLAYER_HALF_EXTENTS,
+            half_extents: Default::default(),
             grounded: false,
         });
 }
