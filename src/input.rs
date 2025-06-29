@@ -168,13 +168,15 @@ fn move_vertical(
     plyr: &mut Player,
     dt: f32,
 ) {
-    // reset grounded so each frame re‑evaluates contact
-    plyr.grounded = false;
+    // re-check ground contact before applying gravity
+    apply_ground_snap(spatial, entity, tf, plyr);
 
-    if !plyr.grounded {
-        plyr.vertical_vel -= params.gravity * dt;
-    } else {
+    if plyr.grounded {
+        // player was grounded last frame, so don't apply gravity
         plyr.vertical_vel = 0.0;
+    } else {
+        // apply gravity when falling
+        plyr.vertical_vel -= params.gravity * dt;
     }
     tf.translation.y += plyr.vertical_vel * dt;
     resolve_vertical_collision(spatial, entity, col, tf, plyr);
