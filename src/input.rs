@@ -187,18 +187,20 @@ fn resolve_vertical_collision(
     tf: &mut Transform,
     plyr: &mut Player,
 ) {
-    let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
-    if let Some(hit) = spatial.cast_shape(
-        col,
-        tf.translation + Vec3::Y * (plyr.half_extents.y + STEP_HEIGHT),
-        tf.rotation,
-        Dir3::NEG_Y,
-        &ShapeCastConfig { compute_contact_on_penetration: true, max_distance: 100.0, ..Default::default() },
-        &filter,
-    ) {
-        tf.translation.y = hit.point1.y + plyr.half_extents.y + SKIN;
-        plyr.grounded = true;
-        plyr.vertical_vel = 0.0;
+    if plyr.vertical_vel <= 0.0 {
+        let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
+        if let Some(hit) = spatial.cast_shape(
+            col,
+            tf.translation + Vec3::Y * (plyr.half_extents.y + STEP_HEIGHT),
+            tf.rotation,
+            Dir3::NEG_Y,
+            &ShapeCastConfig { compute_contact_on_penetration: true, max_distance: 100.0, ..Default::default() },
+            &filter,
+        ) {
+            tf.translation.y = hit.point1.y + plyr.half_extents.y + SKIN;
+            plyr.grounded = true;
+            plyr.vertical_vel = 0.0;
+        }
     }
 }
 
