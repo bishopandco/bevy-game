@@ -6,7 +6,7 @@ use bevy::{
     prelude::*,
 };
 
-const STEP_HEIGHT: f32 = 0.35;
+const STEP_HEIGHT: f32 = 0.25;
 const MAX_SLOPE_COS: f32 = 0.707;
 const SKIN: f32 = 0.03;
 const FALL_RESET_Y: f32 = -10.0;
@@ -153,7 +153,7 @@ fn bounce(plyr: &mut Player, remaining: &mut Vec3, normal: Vec3) {
     const BOUNCE: f32 = 0.1;
     plyr.speed = -plyr.speed * BOUNCE;
     *remaining = if BOUNCE > 0.0 {
-        *remaining - 10.0 * remaining.dot(normal) * normal
+        *remaining - 2.0 * remaining.dot(normal) * normal
     } else {
         Vec3::ZERO
     };
@@ -193,7 +193,11 @@ fn resolve_vertical_collision(
         tf.translation + Vec3::Y * (plyr.half_extents.y + STEP_HEIGHT),
         tf.rotation,
         Dir3::NEG_Y,
-        &ShapeCastConfig { compute_contact_on_penetration: true, max_distance: 100.0, ..Default::default() },
+        &ShapeCastConfig {
+            compute_contact_on_penetration: true,
+            max_distance: plyr.half_extents.y + STEP_HEIGHT + SKIN,
+            ..Default::default()
+        },
         &filter,
     ) {
         tf.translation.y = hit.point1.y + plyr.half_extents.y + SKIN;
