@@ -129,9 +129,8 @@ fn move_horizontal(
                 tf.translation += dir.as_vec3() * (hit.distance - SKIN).max(0.0);
                 if hit.normal1.y > MAX_SLOPE_COS {
                     plyr.grounded = true;
-                    break;
                 }
-                bounce(plyr, &mut remaining, hit.normal1);
+                slide(&mut remaining, hit.normal1);
             }
             None => {
                 tf.translation += remaining;
@@ -141,14 +140,9 @@ fn move_horizontal(
     }
 }
 
-fn bounce(plyr: &mut Player, remaining: &mut Vec3, normal: Vec3) {
-    const BOUNCE: f32 = 0.1;
-    plyr.speed = -plyr.speed * BOUNCE;
-    *remaining = if BOUNCE > 0.0 {
-        *remaining - 2.0 * remaining.dot(normal) * normal
-    } else {
-        Vec3::ZERO
-    };
+fn slide(remaining: &mut Vec3, normal: Vec3) {
+    // Project the movement onto the collision plane to keep momentum
+    *remaining = *remaining - remaining.dot(normal) * normal;
 }
 
 fn move_vertical(
@@ -232,7 +226,9 @@ fn orient_to_ground(spatial: &SpatialQuery, entity: Entity, tf: &mut Transform, 
         .map(|h| h.normal)
         .unwrap_or(Vec3::Y);
     let yaw_rot = Quat::from_rotation_y(plyr.yaw);
-    tf.rotation = Quat::from_rotation_arc(Vec3::Y, ground_n) * yaw_rot;
+    let target = Quat::from_rotation_arc(Vec3::Y, ground_n) * yaw_rot;
+    const ROT_SMOOTH: f32 = 0.2;
+    tf.rotation = tf.rotation.slerp(target, ROT_SMOOTH);
 }
 
 fn fall_reset_system(mut q: Query<(&mut Transform, &mut Player)>) {
