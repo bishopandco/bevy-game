@@ -9,7 +9,7 @@ use bevy::{
 const STEP_HEIGHT: f32 = 0.25;
 const MAX_SLOPE_COS: f32 = 0.707;
 const SKIN: f32 = 0.03;
-const FALL_RESET_Y: f32 = -10.0;
+const FALL_RESET_Y: f32 = -100.0;
 const RESPAWN_POS: Vec3 = Vec3::new(0.0, 1.5, 0.0);
 
 #[derive(Component, Default)]
@@ -30,7 +30,6 @@ impl Plugin for PlayerControlPlugin {
                 player_input_system,
                 player_move_system.after(player_input_system),
                 player_orientation_system.after(player_move_system),
-                fall_reset_system,
             ),
         );
     }
@@ -77,12 +76,7 @@ fn player_orientation_system(
     }
 }
 
-fn update_speed(
-    keys: &ButtonInput<KeyCode>,
-    params: &GameParams,
-    plyr: &mut Player,
-    dt: f32,
-) {
+fn update_speed(keys: &ButtonInput<KeyCode>, params: &GameParams, plyr: &mut Player, dt: f32) {
     if keys.pressed(KeyCode::ArrowUp) {
         plyr.speed = (plyr.speed + params.acceleration * dt).min(params.max_speed);
     } else if keys.pressed(KeyCode::Space) {
@@ -92,12 +86,7 @@ fn update_speed(
     }
 }
 
-fn update_yaw(
-    keys: &ButtonInput<KeyCode>,
-    params: &GameParams,
-    plyr: &mut Player,
-    dt: f32,
-) {
+fn update_yaw(keys: &ButtonInput<KeyCode>, params: &GameParams, plyr: &mut Player, dt: f32) {
     if keys.pressed(KeyCode::ArrowLeft) {
         plyr.yaw += params.yaw_rate * dt;
     }
@@ -130,7 +119,10 @@ fn move_horizontal(
             tf.translation,
             tf.rotation,
             dir,
-            &ShapeCastConfig { max_distance: dist + SKIN, ..Default::default() },
+            &ShapeCastConfig {
+                max_distance: dist + SKIN,
+                ..Default::default()
+            },
             &filter,
         ) {
             Some(hit) => {
@@ -215,19 +207,28 @@ fn apply_ground_snap(
     plyr: &mut Player,
 ) {
     let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
-    let grounded_now = spatial.cast_ray(tf.translation, Dir3::NEG_Y, plyr.half_extents.y + STEP_HEIGHT + SKIN, false, &filter).is_some();
+    let grounded_now = spatial
+        .cast_ray(
+            tf.translation,
+            Dir3::NEG_Y,
+            plyr.half_extents.y + STEP_HEIGHT + SKIN,
+            false,
+            &filter,
+        )
+        .is_some();
     plyr.grounded = grounded_now;
 }
 
-fn orient_to_ground(
-    spatial: &SpatialQuery,
-    entity: Entity,
-    tf: &mut Transform,
-    plyr: &Player,
-) {
+fn orient_to_ground(spatial: &SpatialQuery, entity: Entity, tf: &mut Transform, plyr: &Player) {
     let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
     let ground_n = spatial
-        .cast_ray(tf.translation, Dir3::NEG_Y, plyr.half_extents.y + STEP_HEIGHT + SKIN, false, &filter)
+        .cast_ray(
+            tf.translation,
+            Dir3::NEG_Y,
+            plyr.half_extents.y + STEP_HEIGHT + SKIN,
+            false,
+            &filter,
+        )
         .map(|h| h.normal)
         .unwrap_or(Vec3::Y);
     let yaw_rot = Quat::from_rotation_y(plyr.yaw);
