@@ -208,9 +208,19 @@ fn apply_ground_snap(
     tf: &mut Transform,
     plyr: &mut Player,
 ) {
-    let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
-    let grounded_now = spatial.cast_ray(tf.translation, Dir3::NEG_Y, plyr.half_extents.y + STEP_HEIGHT + SKIN, false, &filter).is_some();
-    plyr.grounded = grounded_now;
+    if plyr.vertical_vel <= 0.0 {
+        let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
+        let grounded_now = spatial
+            .cast_ray(
+                tf.translation,
+                Dir3::NEG_Y,
+                plyr.half_extents.y + STEP_HEIGHT + SKIN,
+                false,
+                &filter,
+            )
+            .is_some();
+        plyr.grounded = grounded_now;
+    }
 }
 
 fn orient_to_ground(
