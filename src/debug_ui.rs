@@ -1,17 +1,12 @@
-//! egui overlay: live-tune `GameParams`, watch player stats, and click **Respawn** to
-//! reset every player back to the start.
-
 use bevy::prelude::*;
-use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiContextPass};
+use bevy_egui::{egui, EguiContextPass, EguiContexts, EguiPlugin};
 
 use crate::globals::GameParams;
 use crate::input::Player;
 
-/// Event fired by the UI to request a respawn.
 #[derive(Event, Default, Debug)]
 pub struct RespawnEvent;
 
-/// Add with `app.add_plugins(DebugUiPlugin)`.
 pub struct DebugUiPlugin;
 
 impl Plugin for DebugUiPlugin {
@@ -32,41 +27,33 @@ fn debug_ui(
     mut respawn_writer: EventWriter<RespawnEvent>,
 ) {
     let ctx = ctxs.ctx_mut();
-
-    // ---------------- global controls ----------------
     egui::Window::new("GameParams").show(ctx, |ui| {
         ui.label(format!("FPS: {:.0}", 1.0 / time.delta_secs()));
-
-        // ---- Respawn button ----
         if ui.button("Respawn").clicked() {
             respawn_writer.write(RespawnEvent);
         }
-
-        // ---- sliders ----
         macro_rules! slider {
             ($field:ident, $range:expr) => {
-                ui.add(egui::Slider::new(&mut params.$field, $range)
-                    .text(stringify!($field)));
+                ui.add(egui::Slider::new(&mut params.$field, $range).text(stringify!($field)));
             };
         }
 
-        slider!(max_speed,          0.0..=150.0);
-        slider!(acceleration,       0.0..=150.0);
+        slider!(max_speed, 0.0..=150.0);
+        slider!(acceleration, 0.0..=150.0);
         slider!(brake_deceleration, 0.0..=150.0);
         slider!(brake_acceleration, 0.0..=150.0);
-        slider!(friction,           0.0..=50.0);
-        slider!(rotation_speed,     0.0..=std::f32::consts::TAU);
-        slider!(cam_distance,       0.0..=20.0);
-        slider!(cam_height,         0.0..=20.0);
-        slider!(cam_lerp,           0.0..=1.0);
-        slider!(look_ahead,         0.0..=20.0);
-        slider!(mini_map_size,      0.0..=100.0);
-        slider!(mini_map_height,    0.0..=200.0);
-        slider!(gravity,            0.0..=30.0);
-        slider!(yaw_rate,           0.0..=std::f32::consts::TAU);
+        slider!(friction, 0.0..=50.0);
+        slider!(rotation_speed, 0.0..=std::f32::consts::TAU);
+        slider!(cam_distance, 0.0..=20.0);
+        slider!(cam_height, 0.0..=20.0);
+        slider!(cam_lerp, 0.0..=1.0);
+        slider!(look_ahead, 0.0..=20.0);
+        slider!(mini_map_size, 0.0..=100.0);
+        slider!(mini_map_height, 0.0..=200.0);
+        slider!(gravity, 0.0..=30.0);
+        slider!(yaw_rate, 0.0..=std::f32::consts::TAU);
     });
 
-    // ---------------- per-player HUD -----------------
     egui::Window::new("Player Stats").show(ctx, |ui| {
         for (i, (p, tf)) in players.iter().enumerate() {
             ui.heading(format!("Player {i}"));
@@ -79,7 +66,6 @@ fn debug_ui(
     });
 }
 
-/// Simple handler: reset every player to (0, 3, 0) and clear motion.
 fn handle_respawn(
     mut ev: EventReader<RespawnEvent>,
     mut players: Query<(&mut Transform, &mut Player)>,
@@ -87,8 +73,7 @@ fn handle_respawn(
     if ev.is_empty() {
         return;
     }
-    ev.clear(); // consume all pending events
-
+    ev.clear();
     for (mut tf, mut plyr) in &mut players {
         tf.translation = Vec3::new(0.0, 3.0, 0.0);
         plyr.speed = 0.0;

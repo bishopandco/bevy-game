@@ -1,9 +1,7 @@
-use avian3d::prelude::Collider;
-use crate::input::Player;
 use crate::globals::PLAYER_HALF_EXTENTS;
-use avian3d::prelude::{
-    ColliderConstructor, ColliderConstructorHierarchy, LinearVelocity, RigidBody,
-};
+use crate::input::Player;
+use avian3d::prelude::Collider;
+use avian3d::prelude::{LinearVelocity, RigidBody};
 use bevy::prelude::*;
 use bevy::render::mesh::MeshAabb;
 use bevy::render::primitives::Aabb;
@@ -22,7 +20,6 @@ fn setup_world(
     _materials: Res<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    /* ── terrain ─────────────────────────────────────── */
     let terrain_scene: Handle<Scene> = asset_server.load("models/terrain.glb#Scene0");
     commands
         .spawn(SceneRoot(terrain_scene))
@@ -31,7 +28,6 @@ fn setup_world(
         .insert(Collider::cuboid(100.0, 0.1, 100.0))
         .insert(RigidBody::Static);
 
-    /* ── lighting ────────────────────────────────────── */
     commands.insert_resource(AmbientLight {
         brightness: 0.5,
         ..default()
@@ -44,13 +40,10 @@ fn setup_world(
         })
         .insert(Transform::from_xyz(5.0, 10.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y));
 
-    /* ── player car ──────────────────────────────────── */
     let mesh_handle: Handle<Mesh> = asset_server.load("models/car.glb#Mesh0/Primitive0");
 
-    // Fallback size until mesh finishes loading
     let default_half_extents = Vec3::splat(0.5);
 
-    // Compute half-extents manually (Aabb::half_extents was removed in 0.16)
     let _half_extents = meshes
         .get(&mesh_handle)
         .and_then(|m| m.compute_aabb())
@@ -62,7 +55,6 @@ fn setup_world(
         .spawn(SceneRoot(car_scene))
         .insert(Transform::from_xyz(0.0, 1.5, 0.0))
         .insert(GlobalTransform::default())
-        
         .insert(RigidBody::Kinematic)
         .insert(LinearVelocity::ZERO)
         .insert(Player {
