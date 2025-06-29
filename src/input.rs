@@ -150,10 +150,10 @@ fn move_horizontal(
 }
 
 fn bounce(plyr: &mut Player, remaining: &mut Vec3, normal: Vec3) {
-    const BOUNCE: f32 = 0.0; // tweak if you want rebound
+    const BOUNCE: f32 = 0.1;
     plyr.speed = -plyr.speed * BOUNCE;
     *remaining = if BOUNCE > 0.0 {
-        *remaining - 2.0 * remaining.dot(normal) * normal
+        *remaining - 10.0 * remaining.dot(normal) * normal
     } else {
         Vec3::ZERO
     };
