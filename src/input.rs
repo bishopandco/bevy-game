@@ -168,12 +168,25 @@ fn move_vertical(
     plyr: &mut Player,
     dt: f32,
 ) {
+    // reset grounded so each frame re‑evaluates contact
+    plyr.grounded = false;
+
     if !plyr.grounded {
         plyr.vertical_vel -= params.gravity * dt;
     } else {
         plyr.vertical_vel = 0.0;
     }
     tf.translation.y += plyr.vertical_vel * dt;
+    resolve_vertical_collision(spatial, entity, col, tf, plyr);
+}
+
+fn resolve_vertical_collision(
+    spatial: &SpatialQuery,
+    entity: Entity,
+    col: &Collider,
+    tf: &mut Transform,
+    plyr: &mut Player,
+) {
     let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
     if let Some(hit) = spatial.cast_shape(
         col,
@@ -196,9 +209,8 @@ fn apply_ground_snap(
     plyr: &mut Player,
 ) {
     let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
-    if spatial.cast_ray(tf.translation, Dir3::NEG_Y, plyr.half_extents.y + STEP_HEIGHT + SKIN, false, &filter).is_some() {
-        plyr.grounded = true;
-    }
+    let grounded_now = spatial.cast_ray(tf.translation, Dir3::NEG_Y, plyr.half_extents.y + STEP_HEIGHT + SKIN, false, &filter).is_some();
+    plyr.grounded = grounded_now;
 }
 
 fn orient_to_ground(
