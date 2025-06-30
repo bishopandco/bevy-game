@@ -23,18 +23,18 @@ pub struct GameParams {
 impl Default for GameParams {
     fn default() -> Self {
         Self {
-            max_speed: 100.0,
-            acceleration: 25.0,
-            brake_deceleration: 10.0,
-            friction: 4.0,
+            max_speed: 40.0,
+            acceleration: 10.0,
+            brake_deceleration: 150.0,
+            friction: 0.5,
             rotation_speed: std::f32::consts::PI,
-            cam_distance: 5.0,
-            cam_height: 4.0,
+            cam_distance: 20.0,
+            cam_height: 3.0,
             cam_lerp: 0.1,
-            look_ahead: 6.0,
+            look_ahead: 2.0,
             mini_map_size: 40.0,
             mini_map_height: 120.0,
-            brake_acceleration: 20.0,
+            brake_acceleration: 5.0,
             gravity: 9.81,
             yaw_rate: std::f32::consts::PI / 2.0
         }
