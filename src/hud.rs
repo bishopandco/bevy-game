@@ -34,24 +34,14 @@ fn setup_hud(mut commands: Commands, asset_server: Res<AssetServer>) {
         RenderLayers::layer(HUD_LAYER as Layer),
     ));
 
-    let mask = asset_server.load("mask.svg");
-    let gradient = asset_server.load("gradient.svg");
+    let speedometer = asset_server.load("speedometer.svg");
 
-    // Gradient underneath.
     commands.spawn((
-        Svg2d(gradient),
+        Svg2d(speedometer),
         Origin::Custom((0.0, 0.5)),
         Transform::from_xyz(0.0, 0.0, 0.0),
         RenderLayers::layer(HUD_LAYER as Layer),
         Speedometer,
-    ));
-
-    // Outline on top.
-    commands.spawn((
-        Svg2d(mask),
-        Origin::Custom((0.0, 0.5)),
-        Transform::from_xyz(0.0, 0.0, 1.0),
-        RenderLayers::layer(HUD_LAYER as Layer),
     ));
 }
 
