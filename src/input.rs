@@ -11,6 +11,7 @@ const MAX_SLOPE_COS: f32 = 0.707;
 const SKIN: f32 = 0.03;
 const FALL_RESET_Y: f32 = -100.0;
 const RESPAWN_POS: Vec3 = Vec3::new(0.0, 1.5, 0.0);
+const RESPAWN_YAW: f32 = 0.0;
 
 #[derive(Component, Default)]
 pub struct Player {
@@ -240,6 +241,7 @@ fn fall_reset_system(mut q: Query<(&mut Transform, &mut Player)>) {
             plyr.speed = 0.0;
             plyr.vertical_vel = 0.0;
             plyr.grounded = false;
+            plyr.yaw = RESPAWN_YAW;
         }
     }
 }
