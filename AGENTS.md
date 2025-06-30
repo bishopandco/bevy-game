@@ -16,3 +16,4 @@ It is using the latest versions of bevy and avian.
 - Agent does not need to run tests.
 - Agent does not need to run the application.
 - Agent should only analyze code and submit PRs.
+- Do not run Cargo Check or any other commands, just write code and push PRs.
