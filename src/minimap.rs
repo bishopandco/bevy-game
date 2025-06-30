@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy::render::camera::Viewport;
+use bevy::render::view::RenderLayers;
 use crate::globals::GameParams;
 
 pub struct MiniMapPlugin;
@@ -31,5 +32,6 @@ fn setup_minimap_camera(
         .insert(
             Transform::from_xyz(0.0, params.cam_height * 2.0, 0.0)
                 .looking_at(Vec3::ZERO, Vec3::Y),
-        );
+        )
+        .insert(RenderLayers::layer(0));
 }

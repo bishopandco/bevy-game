@@ -2,6 +2,7 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use game_demo::camera::CameraPlugin;
 use game_demo::debug_ui::DebugUiPlugin;
+use game_demo::hud::HudPlugin;
 use game_demo::globals::GameParams;
 use game_demo::input::PlayerControlPlugin;
 use game_demo::minimap::MiniMapPlugin;
@@ -23,6 +24,7 @@ fn main() {
             PlayerControlPlugin,
             CameraPlugin,
             MiniMapPlugin,
+            HudPlugin,
         ))
         .add_plugins(DebugUiPlugin)
         .run();

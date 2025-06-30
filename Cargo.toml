@@ -11,6 +11,7 @@ license = "MIT"
 bevy = { version = "0.16.0-rc1" }
 avian3d = { version = "0.3", features = ["debug-plugin", "bevy_scene"] }
 bevy_egui = { git = "https://github.com/mvlabat/bevy_egui", branch = "main" }
+bevy_svg = "0.16.0-rc1"
 
 
 # Optional physics / debug helpers (comment out until you need them)
