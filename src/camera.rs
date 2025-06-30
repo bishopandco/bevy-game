@@ -27,10 +27,10 @@ fn setup_camera(
     if let Ok(_player) = player_q.single() {
         commands
             .spawn(Camera3d::default())
-            .insert(Transform::from_xyz(0.0, 5.0, -10.0))
+            .insert(Transform::from_xyz(0.0, 1.0, -10.0))
             .insert(FollowCamera {
                 distance: 10.0,
-                height: 5.0,
+                height: 1.0,
             });
     }
 }
