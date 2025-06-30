@@ -80,7 +80,7 @@ fn player_orientation_system(
 fn update_speed(keys: &ButtonInput<KeyCode>, params: &GameParams, plyr: &mut Player, dt: f32) {
     if keys.pressed(KeyCode::ArrowUp) {
         plyr.speed = (plyr.speed + params.acceleration * dt).min(params.max_speed);
-    } else if keys.pressed(KeyCode::Space) {
+    } else if keys.pressed(KeyCode::ArrowDown) {
         plyr.speed = (plyr.speed - params.brake_acceleration * dt).max(-params.max_speed);
     } else {
         plyr.speed = plyr.speed.signum() * (plyr.speed.abs() - params.friction * dt).max(0.0);
