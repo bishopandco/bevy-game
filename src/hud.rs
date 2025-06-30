@@ -14,7 +14,7 @@ impl Plugin for HudPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(SvgPlugin)
             .add_systems(Startup, setup_hud)
-            .add_systems(Update, update_speedometer);
+            .add_systems(Update, (update_speedometer, position_speedometer));
     }
 }
 
@@ -71,5 +71,14 @@ fn update_speedometer(
 
     for mut tf in &mut q {
         tf.scale.x = speed_ratio;
+    }
+}
+
+fn position_speedometer(windows: Query<&Window>, mut q: Query<&mut Transform, With<Speedometer>>) {
+    let window = windows.single();
+    let size = window.resolution.physical_size();
+    for mut tf in &mut q {
+        tf.translation.x = -(size.x as f32) / 2.0 + 10.0;
+        tf.translation.y = -(size.y as f32) / 2.0 + 10.0;
     }
 }
