@@ -29,8 +29,8 @@ fn player_fire_system(
     mut players: Query<(&Transform, &mut Player)>,
 ) {
     let dt = time.delta_secs();
-    let recharge_rate = dt / 5.0;
-    let fire_cost = 1.0 / (params.fire_rate * 3.0);
+    let recharge_rate = dt / 8.0;
+    let fire_cost = 1.0 / (params.fire_rate * 1.0);
     for (tf, mut plyr) in &mut players {
         if plyr.fire_timer > 0.0 {
             plyr.fire_timer -= dt;
@@ -64,6 +64,7 @@ fn player_fire_system(
                 });
             plyr.fire_timer = 1.0 / params.fire_rate.max(f32::EPSILON);
             plyr.weapon_energy -= fire_cost;
+            info!("Fired laser! Energy left: {}", plyr.weapon_energy);
         }
     }
 }
