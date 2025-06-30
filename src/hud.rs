@@ -1,5 +1,9 @@
 use bevy::prelude::*;
+use bevy::render::view::RenderLayers;
 use bevy_svg::prelude::*;
+
+/// All HUD elements are drawn on this render layer.
+pub const HUD_LAYER: u8 = 1;
 
 /// Plugin that sets up the heads-up display.
 pub struct HudPlugin;
@@ -20,6 +24,7 @@ fn setup_hud(mut commands: Commands, asset_server: Res<AssetServer>) {
             clear_color: ClearColorConfig::None,
             ..default()
         },
+        RenderLayers::layer(HUD_LAYER),
     ));
 
     let mask = asset_server.load("mask.svg");
@@ -30,6 +35,7 @@ fn setup_hud(mut commands: Commands, asset_server: Res<AssetServer>) {
         Svg2d(gradient),
         Origin::Center,
         Transform::from_xyz(0.0, 0.0, 0.0),
+        RenderLayers::layer(HUD_LAYER),
     ));
 
     // Outline on top.
@@ -37,5 +43,6 @@ fn setup_hud(mut commands: Commands, asset_server: Res<AssetServer>) {
         Svg2d(mask),
         Origin::Center,
         Transform::from_xyz(0.0, 0.0, 1.0),
+        RenderLayers::layer(HUD_LAYER),
     ));
 }
