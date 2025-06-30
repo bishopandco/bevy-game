@@ -24,7 +24,7 @@ fn setup_minimap_camera(
     params: Res<GameParams>,
 ) {
     let window = windows.single();
-    let win_size = window.resolution.physical_size();
+    let win_size = window.unwrap().resolution.physical_size();
     let mut cam = commands.spawn(Camera3d::default());
 
     let size = params.mini_map_size as u32;
