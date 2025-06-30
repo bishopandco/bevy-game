@@ -2,6 +2,8 @@ use bevy::prelude::*;
 use bevy::render::view::{Layer, RenderLayers};
 use bevy_svg::prelude::*;
 
+use crate::{globals::GameParams, input::Player};
+
 /// All HUD elements are drawn on this render layer.
 pub const HUD_LAYER: u8 = 1;
 
@@ -10,9 +12,14 @@ pub struct HudPlugin;
 
 impl Plugin for HudPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(SvgPlugin).add_systems(Startup, setup_hud);
+        app.add_plugins(SvgPlugin)
+            .add_systems(Startup, setup_hud)
+            .add_systems(Update, update_speedometer);
     }
 }
+
+#[derive(Component)]
+struct Speedometer;
 
 fn setup_hud(mut commands: Commands, asset_server: Res<AssetServer>) {
     // 2D camera for the HUD overlay. Clear color is disabled so the 3d scene
@@ -33,16 +40,35 @@ fn setup_hud(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Gradient underneath.
     commands.spawn((
         Svg2d(gradient),
-        Origin::Center,
+        Origin::Custom((0.0, 0.5)),
         Transform::from_xyz(0.0, 0.0, 0.0),
         RenderLayers::layer(HUD_LAYER as Layer),
+        Speedometer,
     ));
 
     // Outline on top.
     commands.spawn((
         Svg2d(mask),
-        Origin::Center,
+        Origin::Custom((0.0, 0.5)),
         Transform::from_xyz(0.0, 0.0, 1.0),
         RenderLayers::layer(HUD_LAYER as Layer),
     ));
+}
+
+fn update_speedometer(
+    params: Res<GameParams>,
+    players: Query<&Player>,
+    mut q: Query<&mut Transform, With<Speedometer>>,
+) {
+    let Ok(player) = players.get_single() else {
+        return;
+    };
+    let mut speed_ratio = player.speed.abs() / params.max_speed.max(f32::EPSILON);
+    if speed_ratio > 1.0 {
+        speed_ratio = 1.0;
+    }
+
+    for mut tf in &mut q {
+        tf.scale.x = speed_ratio;
+    }
 }
