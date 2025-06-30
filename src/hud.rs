@@ -14,14 +14,14 @@ impl Plugin for HudPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(SvgPlugin)
             .add_systems(Startup, setup_hud)
-            .add_systems(Update, update_speedometer);
+            .add_systems(Update, (update_speedometer, position_speedometer));
     }
 }
 
 #[derive(Component)]
 struct Speedometer;
 
-fn setup_hud(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup_hud(mut commands: Commands, asset_server: Res<AssetServer>, windows: Query<&Window>) {
     // 2D camera for the HUD overlay. Clear color is disabled so the 3d scene
     // remains visible.
     commands.spawn((
@@ -34,12 +34,19 @@ fn setup_hud(mut commands: Commands, asset_server: Res<AssetServer>) {
         RenderLayers::layer(HUD_LAYER as Layer),
     ));
 
+    let window = windows.single();
+    let win_size = window.unwrap().resolution.physical_size();
+
     let speedometer = asset_server.load("speedometer.svg");
 
     commands.spawn((
         Svg2d(speedometer),
-        Origin::Custom((0.0, 0.5)),
-        Transform::from_xyz(0.0, 0.0, 0.0),
+        Origin::Custom((0.0, 0.0)),
+        Transform::from_xyz(
+            -(win_size.x as f32) / 2.0 + 50.0,
+            -(win_size.y as f32) / 2.0 + 50.0,
+            0.0,
+        ),
         RenderLayers::layer(HUD_LAYER as Layer),
         Speedometer,
     ));
@@ -60,5 +67,14 @@ fn update_speedometer(
 
     for mut tf in &mut q {
         tf.scale.x = speed_ratio;
+    }
+}
+
+fn position_speedometer(windows: Query<&Window>, mut q: Query<&mut Transform, With<Speedometer>>) {
+    let window = windows.single();
+    let size = window.unwrap().resolution.physical_size();
+    for mut tf in &mut q {
+        tf.translation.x = -(size.x as f32 / 4.0) + 20.0;
+        tf.translation.y = -(size.y as f32 / 4.0) + 120.00;
     }
 }
