@@ -41,7 +41,7 @@ fn setup_hud(
     let speedometer = asset_server.load("speedometer.svg");
 
     let window = windows.single();
-    let size = window.resolution.physical_size();
+    let size = window.unwrap().resolution.physical_size();
     let translation = Vec3::new(-size.x as f32 * 0.5 + 10.0, -size.y as f32 * 0.5 + 10.0, 0.0);
 
     commands.spawn((
