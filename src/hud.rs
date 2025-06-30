@@ -39,7 +39,7 @@ fn setup_hud(
     ));
 
     let window = windows.single();
-    let win_size = window.unwrap().resolution.physical_size();
+    let win_size = window.resolution.physical_size();
 
     let speedometer = asset_server.load("speedometer.svg");
 
@@ -47,8 +47,8 @@ fn setup_hud(
         Svg2d(speedometer),
         Origin::Custom((0.0, 0.0)),
         Transform::from_xyz(
-            -win_size.x as f32 / 2.0 + 10.0,
-            -win_size.y as f32 / 2.0 + 10.0,
+            -(win_size.x as f32) / 2.0 + 10.0,
+            -(win_size.y as f32) / 2.0 + 10.0,
             0.0,
         ),
         RenderLayers::layer(HUD_LAYER as Layer),
