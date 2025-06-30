@@ -2,7 +2,7 @@ use crate::input::Player;
 use bevy::prelude::*;
 
 #[derive(Component)]
-struct FollowCamera {
+pub struct FollowCamera {
     distance: f32,
     height: f32,
 }

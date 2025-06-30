@@ -4,3 +4,4 @@ pub mod globals;
 pub mod input;
 pub mod minimap;
 pub mod world;
+pub mod sky;

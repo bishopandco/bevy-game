@@ -5,6 +5,7 @@ use game_demo::debug_ui::DebugUiPlugin;
 use game_demo::globals::GameParams;
 use game_demo::input::PlayerControlPlugin;
 use game_demo::minimap::MiniMapPlugin;
+use game_demo::sky::SkyDomePlugin;
 use game_demo::world::WorldPlugin;
 
 fn main() {
@@ -18,6 +19,7 @@ fn main() {
         .insert_resource(GameParams::default())
         .add_plugins((
             WorldPlugin,
+            SkyDomePlugin,
             PlayerControlPlugin,
             CameraPlugin,
             MiniMapPlugin,
