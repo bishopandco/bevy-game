@@ -37,9 +37,20 @@ fn player_fire_system(
             let forward = tf.rotation * Vec3::Z;
             let pos = tf.translation + forward * (plyr.half_extents.z + 0.6);
             let mesh = meshes.add(Cuboid::new(0.05, 0.05, 0.3));
+            let material = materials.add(StandardMaterial {
+                base_color: Color::srgb(1.0, 0.0, 0.0),
+                emissive: Color::srgb(5.0, 0.0, 0.0),
+                ..default()
+            });
             commands
                 .spawn(Mesh3d(mesh))
-                .insert(MeshMaterial3d(materials.add(Color::srgb(1.0, 0.0, 0.0))))
+                .insert(MeshMaterial3d(material))
+                .insert(PointLight {
+                    intensity: 1500.0,
+                    range: 6.0,
+                    color: Color::RED,
+                    ..default()
+                })
                 .insert(Transform::from_translation(pos).looking_at(pos + forward, Vec3::Y))
                 .insert(Laser {
                     velocity: forward * LASER_SPEED,
