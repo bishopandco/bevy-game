@@ -47,6 +47,7 @@ fn debug_ui(
         slider!(cam_distance, 0.0..=20.0);
         slider!(cam_height, 0.0..=20.0);
         slider!(cam_lerp, 0.0..=1.0);
+        slider!(cam_rot_lerp, 0.0..=1.0);
         slider!(look_ahead, 0.0..=20.0);
         slider!(mini_map_size, 0.0..=100.0);
         slider!(mini_map_height, 0.0..=200.0);

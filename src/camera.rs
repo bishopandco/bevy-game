@@ -28,10 +28,11 @@ fn setup_camera(
         let forward = player_tf.rotation * Vec3::Z;
         let cam_pos =
             player_tf.translation - forward * params.cam_distance + Vec3::Y * params.cam_height;
+        let up = player_tf.rotation * Vec3::Y;
         commands
             .spawn(Camera3d::default())
             .insert(RenderLayers::layer(0))
-            .insert(Transform::from_translation(cam_pos).looking_at(player_tf.translation, Vec3::Y))
+            .insert(Transform::from_translation(cam_pos).looking_at(player_tf.translation, up))
             .insert(FollowCamera::default());
     }
 }
@@ -52,6 +53,9 @@ fn follow_camera_system(
         cam_tf.translation = cam_tf.translation.lerp(target_pos, params.cam_lerp);
 
         let look_at_pos = target_tf.translation + forward * params.look_ahead;
-        cam_tf.look_at(look_at_pos, Vec3::Y);
+        let target_up = target_tf.rotation * Vec3::Y;
+        let mut target_tf_cam = Transform::from_translation(cam_tf.translation);
+        target_tf_cam.look_at(look_at_pos, target_up);
+        cam_tf.rotation = cam_tf.rotation.slerp(target_tf_cam.rotation, params.cam_rot_lerp);
     }
 }
