@@ -54,5 +54,6 @@ fn setup_world(
             half_extents: Vec3::splat(0.25),
             grounded: false,
             fire_timer: 0.0,
+            weapon_energy: 1.0,
         });
 }

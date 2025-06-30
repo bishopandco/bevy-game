@@ -29,11 +29,17 @@ fn player_fire_system(
     mut players: Query<(&Transform, &mut Player)>,
 ) {
     let dt = time.delta_secs();
+    let recharge_rate = dt / 5.0;
+    let fire_cost = 1.0 / (params.fire_rate * 3.0);
     for (tf, mut plyr) in &mut players {
         if plyr.fire_timer > 0.0 {
             plyr.fire_timer -= dt;
         }
+        plyr.weapon_energy = (plyr.weapon_energy + recharge_rate).min(1.0);
         if keys.pressed(KeyCode::Space) && plyr.fire_timer <= 0.0 {
+            if plyr.weapon_energy < fire_cost {
+                continue;
+            }
             let forward = tf.rotation * Vec3::Z;
             let pos = tf.translation + forward * (plyr.half_extents.z + 0.6);
             let mesh = meshes.add(Cuboid::new(0.05, 0.05, 0.3));
@@ -57,6 +63,7 @@ fn player_fire_system(
                     life: LASER_LIFETIME,
                 });
             plyr.fire_timer = 1.0 / params.fire_rate.max(f32::EPSILON);
+            plyr.weapon_energy -= fire_cost;
         }
     }
 }
