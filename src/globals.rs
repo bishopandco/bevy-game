@@ -33,7 +33,7 @@ impl Default for GameParams {
             cam_distance: 10.0,
             cam_height: 1.9,
             cam_lerp: 0.65,
-            cam_rot_lerp: 0.65,
+            cam_rot_lerp: 0.45,
             look_ahead: 2.0,
             mini_map_size: 300.0,
             mini_map_height: 400.0,
