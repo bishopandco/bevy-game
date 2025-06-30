@@ -7,3 +7,4 @@ pub mod hud;
 pub mod world;
 pub mod sky;
 pub mod weapons;
+pub mod targets;

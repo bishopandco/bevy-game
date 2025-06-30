@@ -9,6 +9,7 @@ use game_demo::weapons::WeaponPlugin;
 use game_demo::minimap::MiniMapPlugin;
 use game_demo::sky::SkyDomePlugin;
 use game_demo::world::WorldPlugin;
+use game_demo::targets::TargetsPlugin;
 
 fn main() {
     App::new()
@@ -21,6 +22,7 @@ fn main() {
         .insert_resource(GameParams::default())
         .add_plugins((
             WorldPlugin,
+            TargetsPlugin,
             SkyDomePlugin,
             PlayerControlPlugin,
             WeaponPlugin,

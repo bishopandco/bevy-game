@@ -6,12 +6,14 @@ pub struct WeaponPlugin;
 
 impl Plugin for WeaponPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (player_fire_system, laser_movement_system));
+        app
+            .add_systems(Update, player_fire_system)
+            .add_systems(Update, laser_movement_system);
     }
 }
 
 #[derive(Component)]
-struct Laser {
+pub struct Laser {
     velocity: Vec3,
     life: f32,
 }
@@ -69,7 +71,7 @@ fn player_fire_system(
     }
 }
 
-fn laser_movement_system(
+pub fn laser_movement_system(
     time: Res<Time>,
     mut commands: Commands,
     mut q: Query<(Entity, &mut Transform, &mut Laser)>,

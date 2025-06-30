@@ -7,17 +7,17 @@
       }
     </style>
   </defs>
-  <rect class="cls-1" x="9.03" y="14.19" width="20.14" height="64.58"/>
-  <rect class="cls-1" x="32.99" y="14.19" width="20.14" height="64.58"/>
-  <rect class="cls-1" x="56.94" y="14.19" width="20.14" height="64.58"/>
-  <rect class="cls-1" x="80.9" y="14.19" width="20.14" height="64.58"/>
-  <rect class="cls-1" x="104.86" y="14.19" width="20.14" height="64.58"/>
-  <rect class="cls-1" x="128.82" y="14.19" width="20.14" height="64.58"/>
-  <rect class="cls-1" x="152.78" y="14.19" width="20.14" height="64.58"/>
-  <rect class="cls-1" x="176.74" y="14.19" width="20.14" height="64.58"/>
-  <rect class="cls-1" x="200.69" y="14.19" width="20.14" height="64.58"/>
-  <rect class="cls-1" x="224.65" y="14.19" width="20.14" height="64.58"/>
-  <rect class="cls-1" x="248.61" y="14.19" width="20.14" height="64.58"/>
-  <rect class="cls-1" x="272.57" y="14.19" width="20.14" height="64.58"/>
-  <rect class="cls-1" x="296.53" y="14.19" width="20.14" height="64.58"/>
+  <path class="cls-1" d="M259.72,50.27V0h-20.14v48.75c6.56.65,13.33,1.15,20.14,1.52Z"/>
+  <path class="cls-1" d="M235.76,48.35V0h-20.14v45.44c6.31,1.18,13.08,2.14,20.14,2.91Z"/>
+  <path class="cls-1" d="M209.07,44.1c.9.2,1.82.4,2.74.59V0h-20.14v36.04c5.69,2.65,11.47,5.36,17.4,8.06Z"/>
+  <path class="cls-1" d="M307.64,51.22V0h-20.14v51.19c6.96.09,13.73.09,20.14.03Z"/>
+  <path class="cls-1" d="M187.85,34.27V0h-20.14v25.28c6.7,2.82,13.37,5.85,20.14,8.98Z"/>
+  <path class="cls-1" d="M283.68,51.13V0h-20.14v50.47c6.75.33,13.51.53,20.14.66Z"/>
+  <path class="cls-1" d="M44.1,7.95V0h-20.14v7.95h20.14Z"/>
+  <path class="cls-1" d="M68.06,7.95V0h-20.14v7.95h20.14Z"/>
+  <path class="cls-1" d="M20.14,7.95V0H0v7.95h20.14Z"/>
+  <path class="cls-1" d="M90.18,7.95c.62,0,1.22.02,1.83.02V0h-20.14v7.95h18.31Z"/>
+  <path class="cls-1" d="M139.93,15.22V0h-20.14v10.49c6.95,1.21,13.63,2.81,20.14,4.72Z"/>
+  <path class="cls-1" d="M115.97,9.87V0h-20.14v8.05c7,.22,13.69.85,20.14,1.82Z"/>
+  <path class="cls-1" d="M163.89,23.7V0h-20.14v16.38c6.84,2.15,13.52,4.62,20.14,7.32Z"/>
 </svg>
