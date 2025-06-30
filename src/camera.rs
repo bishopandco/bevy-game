@@ -1,12 +1,10 @@
+use crate::globals::GameParams;
 use crate::input::Player;
 use bevy::prelude::*;
 use bevy::render::view::RenderLayers;
 
-#[derive(Component)]
-pub struct FollowCamera {
-    distance: f32,
-    height: f32,
-}
+#[derive(Component, Default)]
+pub struct FollowCamera;
 
 pub struct CameraPlugin;
 
@@ -18,38 +16,42 @@ impl Plugin for CameraPlugin {
 
 fn setup_camera(
     mut commands: Commands,
-    player_q: Query<Entity, With<Player>>,
+    player_q: Query<&Transform, With<Player>>,
     cam_q: Query<(), With<FollowCamera>>,
+    params: Res<GameParams>,
 ) {
     if !cam_q.is_empty() {
         return;
     }
 
-    if let Ok(_player) = player_q.single() {
+    if let Ok(player_tf) = player_q.get_single() {
+        let forward = player_tf.rotation * Vec3::Z;
+        let cam_pos =
+            player_tf.translation - forward * params.cam_distance + Vec3::Y * params.cam_height;
         commands
             .spawn(Camera3d::default())
             .insert(RenderLayers::layer(0))
-            .insert(Transform::from_xyz(0.0, 1.0, -10.0))
-            .insert(FollowCamera {
-                distance: 10.0,
-                height: 1.0,
-            });
+            .insert(Transform::from_translation(cam_pos).looking_at(player_tf.translation, Vec3::Y))
+            .insert(FollowCamera::default());
     }
 }
 
 fn follow_camera_system(
-    mut cam_q: Query<(&FollowCamera, &mut Transform)>,
+    params: Res<GameParams>,
+    mut cam_q: Query<&mut Transform, With<FollowCamera>>,
     target_q: Query<&Transform, (With<Player>, Without<FollowCamera>)>,
 ) {
-    let Ok(target_tf) = target_q.single() else {
+    let Ok(target_tf) = target_q.get_single() else {
         return;
     };
 
-    for (follow, mut cam_tf) in &mut cam_q {
+    for mut cam_tf in &mut cam_q {
         let forward = target_tf.rotation * Vec3::Z;
-        cam_tf.translation =
-            target_tf.translation - forward * follow.distance + Vec3::Y * follow.height;
+        let target_pos =
+            target_tf.translation - forward * params.cam_distance + Vec3::Y * params.cam_height;
+        cam_tf.translation = cam_tf.translation.lerp(target_pos, params.cam_lerp);
 
-        cam_tf.look_at(target_tf.translation, Vec3::Y);
+        let look_at_pos = target_tf.translation + forward * params.look_ahead;
+        cam_tf.look_at(look_at_pos, Vec3::Y);
     }
 }
