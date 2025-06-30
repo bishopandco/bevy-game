@@ -5,6 +5,7 @@ use game_demo::debug_ui::DebugUiPlugin;
 use game_demo::hud::HudPlugin;
 use game_demo::globals::GameParams;
 use game_demo::input::PlayerControlPlugin;
+use game_demo::weapons::WeaponPlugin;
 use game_demo::minimap::MiniMapPlugin;
 use game_demo::sky::SkyDomePlugin;
 use game_demo::world::WorldPlugin;
@@ -22,6 +23,7 @@ fn main() {
             WorldPlugin,
             SkyDomePlugin,
             PlayerControlPlugin,
+            WeaponPlugin,
             CameraPlugin,
             MiniMapPlugin,
             HudPlugin,

@@ -53,5 +53,6 @@ fn setup_world(
             yaw: 0.0,
             half_extents: Vec3::splat(0.25),
             grounded: false,
+            fire_timer: 0.0,
         });
 }

@@ -20,6 +20,7 @@ pub struct Player {
     pub yaw: f32,
     pub half_extents: Vec3,
     pub grounded: bool,
+    pub fire_timer: f32,
 }
 
 pub struct PlayerControlPlugin;
@@ -242,6 +243,7 @@ fn fall_reset_system(mut q: Query<(&mut Transform, &mut Player)>) {
             plyr.vertical_vel = 0.0;
             plyr.grounded = false;
             plyr.yaw = RESPAWN_YAW;
+            plyr.fire_timer = 0.0;
         }
     }
 }

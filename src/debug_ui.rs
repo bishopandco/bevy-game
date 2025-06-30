@@ -53,6 +53,7 @@ fn debug_ui(
         slider!(mini_map_height, 0.0..=200.0);
         slider!(gravity, 0.0..=30.0);
         slider!(yaw_rate, 0.0..=std::f32::consts::TAU);
+        slider!(fire_rate, 0.1..=20.0);
     });
 
     egui::Window::new("Player Stats").show(ctx, |ui| {
@@ -79,5 +80,6 @@ fn handle_respawn(
         tf.translation = Vec3::new(0.0, 3.0, 0.0);
         plyr.speed = 0.0;
         plyr.vertical_vel = 0.0;
+        plyr.fire_timer = 0.0;
     }
 }
