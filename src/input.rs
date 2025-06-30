@@ -29,6 +29,7 @@ impl Plugin for PlayerControlPlugin {
             (
                 player_input_system,
                 player_move_system.after(player_input_system),
+                fall_reset_system,
                 player_orientation_system.after(player_move_system),
             ),
         );
