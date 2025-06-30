@@ -39,7 +39,7 @@ fn player_fire_system(
             let mesh = meshes.add(Cuboid::new(0.05, 0.05, 0.3));
             let material = materials.add(StandardMaterial {
                 base_color: Color::srgb(1.0, 0.0, 0.0),
-                emissive: Color::srgb(5.0, 0.0, 0.0),
+                emissive: LinearRgba::from(Color::srgb(5.0, 0.0, 0.0)),
                 ..default()
             });
             commands
@@ -48,7 +48,7 @@ fn player_fire_system(
                 .insert(PointLight {
                     intensity: 1500.0,
                     range: 6.0,
-                    color: Color::RED,
+                    color: Color::srgb(5.0, 0.0, 0.0),
                     ..default()
                 })
                 .insert(Transform::from_translation(pos).looking_at(pos + forward, Vec3::Y))
