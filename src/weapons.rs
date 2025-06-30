@@ -11,7 +11,7 @@ impl Plugin for WeaponPlugin {
 }
 
 #[derive(Component)]
-struct Laser {
+pub struct Laser {
     velocity: Vec3,
     life: f32,
 }
