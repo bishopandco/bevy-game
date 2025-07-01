@@ -146,17 +146,25 @@ fn move_horizontal(
 }
 
 fn slide(remaining: &mut Vec3, normal: Vec3, plyr: &mut Player, params: &GameParams) {
+    let incoming = *remaining;
     // Project the movement onto the collision plane to keep momentum
-    *remaining = *remaining - remaining.dot(normal) * normal;
+    *remaining -= remaining.dot(normal) * normal;
+
     // reduce momentum based on collision
     let mut factor = 1.0 - params.collision_damping;
     if normal.y > 0.0 && normal.y < 1.0 {
         let slope = 1.0 - normal.y;
-        factor *= 1.0 - slope * params.slope_damping;
+        let eased = slope.powf(params.slope_ease);
+        factor *= 1.0 - eased * params.slope_damping;
     }
     factor = factor.clamp(0.0, 1.0);
     *remaining *= factor;
     plyr.speed *= factor;
+
+    // add a small bounce based on collision angle
+    let reflect_dir = (incoming - 2.0 * incoming.dot(normal) * normal).normalize_or_zero();
+    let bounce = incoming.length() * params.bounce_factor * (1.0 - normal.y.abs());
+    *remaining += reflect_dir * bounce;
 }
 
 fn move_vertical(

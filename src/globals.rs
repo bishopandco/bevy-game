@@ -22,6 +22,8 @@ pub struct GameParams {
     pub fire_rate: f32,
     pub collision_damping: f32,
     pub slope_damping: f32,
+    pub slope_ease: f32,
+    pub bounce_factor: f32,
 }
 
 impl Default for GameParams {
@@ -45,6 +47,8 @@ impl Default for GameParams {
             fire_rate: 5.0,
             collision_damping: 0.4,
             slope_damping: 0.2,
+            slope_ease: 0.5,
+            bounce_factor: 0.05,
         }
     }
 }
