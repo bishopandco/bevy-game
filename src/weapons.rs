@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 
-use crate::{input::Player, globals::GameParams};
+use avian3d::prelude::{Collider, Dir3, ShapeCastConfig, SpatialQuery, SpatialQueryFilter};
+
+use crate::{globals::GameParams, input::Player};
 
 pub struct WeaponPlugin;
 
@@ -16,10 +18,13 @@ impl Plugin for WeaponPlugin {
 pub struct Laser {
     velocity: Vec3,
     life: f32,
+    material: Handle<StandardMaterial>,
 }
 
-const LASER_SPEED: f32 = 100.0;
-const LASER_LIFETIME: f32 = 2.0;
+pub const LASER_SPEED: f32 = 100.0;
+pub const LASER_LIFETIME: f32 = 0.5; // seconds
+pub const LASER_LIGHT_INTENSITY: f32 = 1500.0;
+pub const LASER_BOUNCE_DECAY: f32 = 0.67;
 
 fn player_fire_system(
     time: Res<Time>,
@@ -52,9 +57,9 @@ fn player_fire_system(
             });
             commands
                 .spawn(Mesh3d(mesh))
-                .insert(MeshMaterial3d(material))
+                .insert(MeshMaterial3d(material.clone()))
                 .insert(PointLight {
-                    intensity: 1500.0,
+                    intensity: LASER_LIGHT_INTENSITY,
                     range: 6.0,
                     color: Color::srgb(5.0, 0.0, 0.0),
                     ..default()
@@ -63,6 +68,7 @@ fn player_fire_system(
                 .insert(Laser {
                     velocity: forward * LASER_SPEED,
                     life: LASER_LIFETIME,
+                    material,
                 });
             plyr.fire_timer = 1.0 / params.fire_rate.max(f32::EPSILON);
             plyr.weapon_energy -= fire_cost;
@@ -73,13 +79,59 @@ fn player_fire_system(
 
 pub fn laser_movement_system(
     time: Res<Time>,
+    spatial: SpatialQuery,
     mut commands: Commands,
-    mut q: Query<(Entity, &mut Transform, &mut Laser)>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut q: Query<(Entity, &mut Transform, &mut Laser, &mut PointLight)>,
 ) {
     let dt = time.delta_secs();
-    for (e, mut tf, mut laser) in &mut q {
-        tf.translation += laser.velocity * dt;
+    let col = Collider::cuboid(0.025, 0.025, 0.15);
+    for (e, mut tf, mut laser, mut light) in &mut q {
+        let mut remaining = laser.velocity * dt;
+        let filter = SpatialQueryFilter::default().with_excluded_entities([e]);
+        for _ in 0..2 {
+            let dist = remaining.length();
+            if dist <= f32::EPSILON {
+                break;
+            }
+            let dir = Dir3::new_unchecked(remaining / dist);
+            match spatial.cast_shape(
+                col,
+                tf.translation,
+                tf.rotation,
+                dir,
+                &ShapeCastConfig {
+                    max_distance: dist,
+                    ..Default::default()
+                },
+                &filter,
+            ) {
+                Some(hit) => {
+                    tf.translation += dir.as_vec3() * hit.distance.max(0.0);
+                    let normal = hit.normal1;
+                    laser.velocity =
+                        (laser.velocity - 2.0 * laser.velocity.dot(normal) * normal)
+                            * LASER_BOUNCE_DECAY;
+                    remaining = laser.velocity * ((dist - hit.distance) / dist);
+                }
+                None => {
+                    tf.translation += remaining;
+                    remaining = Vec3::ZERO;
+                    break;
+                }
+            }
+        }
+
+        if laser.velocity.length_squared() > 0.0 {
+            tf.look_at(tf.translation + laser.velocity, Vec3::Y);
+        }
+
         laser.life -= dt;
+        let ratio = (laser.life / LASER_LIFETIME).clamp(0.0, 1.0);
+        light.intensity = LASER_LIGHT_INTENSITY * ratio;
+        if let Some(mat) = materials.get_mut(&laser.material) {
+            mat.emissive = LinearRgba::from(Color::srgb(5.0 * ratio, 0.0, 0.0));
+        }
         if laser.life <= 0.0 {
             commands.entity(e).despawn();
         }

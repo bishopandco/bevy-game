@@ -36,23 +36,27 @@ const LASER_DAMAGE: i32 = 5;
 
 fn laser_hit_system(
     mut commands: Commands,
-    lasers: Query<(Entity, &Transform), With<Laser>>,
+    mut lasers: Query<(&mut Transform, &mut Laser)>,
     mut targets: Query<(Entity, &Transform, &mut Target)>,
 ) {
-    for (laser_entity, laser_tf) in &lasers {
+    for (mut laser_tf, mut laser) in &mut lasers {
         info!("laser hit system: checking for hits");
         for (target_entity, target_tf, mut target) in &mut targets {
             let dist = laser_tf.translation.distance(target_tf.translation);
             info!("just the dist {dist:.2} from laser to target");
             if dist < 1.0 {
                 info!("target hit at {dist:.2}: {} HP before", target.hp);
-                commands.entity(laser_entity).despawn();
                 if target.hp <= LASER_DAMAGE {
                     commands.entity(target_entity).despawn_recursive();
                 } else {
                     target.hp -= LASER_DAMAGE;
                     info!("target hp now {}", target.hp);
                 }
+                let normal = (laser_tf.translation - target_tf.translation).normalize();
+                laser.velocity =
+                    (laser.velocity - 2.0 * laser.velocity.dot(normal) * normal) *
+                        crate::weapons::LASER_BOUNCE_DECAY;
+                laser_tf.translation = target_tf.translation + normal;
                 break;
             }
         }
