@@ -1,7 +1,6 @@
 use bevy::prelude::*;
-use bevy::render::color::LinearRgba;
 
-use avian3d::prelude::{Collider, Dir3, ShapeCastConfig, SpatialQuery, SpatialQueryFilter};
+use avian3d::prelude::{Collider, ShapeCastConfig, SpatialQuery, SpatialQueryFilter};
 
 use crate::{globals::GameParams, input::Player};
 
@@ -17,7 +16,7 @@ impl Plugin for WeaponPlugin {
 
 #[derive(Component)]
 pub struct Laser {
-    velocity: Vec3,
+    pub(crate) velocity: Vec3,
     life: f32,
     material: Handle<StandardMaterial>,
 }
@@ -97,7 +96,7 @@ pub fn laser_movement_system(
             }
             let dir = Dir3::new_unchecked(remaining / dist);
             match spatial.cast_shape(
-                col,
+                &col,
                 tf.translation,
                 tf.rotation,
                 dir,
