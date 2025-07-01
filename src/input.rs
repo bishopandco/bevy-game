@@ -8,7 +8,8 @@ use bevy::{
 
 const STEP_HEIGHT: f32 = 0.25;
 const MAX_SLOPE_COS: f32 = 0.707;
-const SKIN: f32 = 0.03;
+// Extra distance to keep from geometry when resolving collisions
+const SKIN: f32 = 0.05;
 const FALL_RESET_Y: f32 = -100.0;
 const RESPAWN_POS: Vec3 = Vec3::new(0.0, 1.5, 0.0);
 const RESPAWN_YAW: f32 = 0.0;
@@ -65,7 +66,7 @@ fn player_move_system(
             plyr.half_extents.y,
             plyr.half_extents.z,
         );
-        move_horizontal(&spatial, entity, &col, &mut tf, &mut plyr, dt);
+        move_horizontal(&spatial, &params, entity, &col, &mut tf, &mut plyr, dt);
         move_vertical(&spatial, &params, entity, &col, &mut tf, &mut plyr, dt);
     }
 }
@@ -101,6 +102,7 @@ fn update_yaw(keys: &ButtonInput<KeyCode>, params: &GameParams, plyr: &mut Playe
 
 fn move_horizontal(
     spatial: &SpatialQuery,
+    params: &GameParams,
     entity: Entity,
     col: &Collider,
     tf: &mut Transform,
@@ -124,6 +126,7 @@ fn move_horizontal(
             tf.rotation,
             dir,
             &ShapeCastConfig {
+                compute_contact_on_penetration: true,
                 max_distance: dist + SKIN,
                 ..Default::default()
             },
@@ -134,7 +137,7 @@ fn move_horizontal(
                 if hit.normal1.y > MAX_SLOPE_COS {
                     plyr.grounded = true;
                 }
-                slide(&mut remaining, hit.normal1);
+                slide(&mut remaining, hit.normal1, plyr, params);
             }
             None => {
                 tf.translation += remaining;
@@ -144,8 +147,27 @@ fn move_horizontal(
     }
 }
 
-fn slide(remaining: &mut Vec3, normal: Vec3) {
-    *remaining = *remaining - remaining.dot(normal) * normal;
+fn slide(remaining: &mut Vec3, normal: Vec3, plyr: &mut Player, params: &GameParams) {
+    let incoming = *remaining;
+    // Project the movement onto the collision plane to keep momentum
+    *remaining -= remaining.dot(normal) * normal;
+
+    // reduce momentum based on collision
+    let mut factor = 1.0 - params.collision_damping;
+    if normal.y > 0.0 && normal.y < 1.0 {
+        let slope = 1.0 - normal.y;
+        let eased = slope.powf(params.slope_ease);
+        factor *= 1.0 - eased * params.slope_damping;
+    }
+    factor = factor.clamp(0.0, 1.0);
+    *remaining *= factor;
+    plyr.speed *= factor;
+
+    // add a small bounce based on collision angle
+    let reflect_dir = (incoming - 2.0 * incoming.dot(normal) * normal).normalize_or_zero();
+    let incident_angle = incoming.normalize_or_zero().dot(-normal).abs();
+    let bounce = incoming.length() * params.bounce_factor * incident_angle;
+    *remaining += reflect_dir * bounce;
 }
 
 fn move_vertical(

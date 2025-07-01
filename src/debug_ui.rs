@@ -54,6 +54,10 @@ fn debug_ui(
         slider!(gravity, 0.0..=30.0);
         slider!(yaw_rate, 0.0..=std::f32::consts::TAU);
         slider!(fire_rate, 0.1..=20.0);
+        slider!(collision_damping, 0.0..=1.0);
+        slider!(slope_damping, 0.0..=1.0);
+        slider!(slope_ease, 0.1..=2.0);
+        slider!(bounce_factor, 0.0..=1.0);
     });
 
     egui::Window::new("Player Stats").show(ctx, |ui| {
