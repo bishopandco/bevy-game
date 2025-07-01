@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::render::color::LinearRgba;
 
 use avian3d::prelude::{Collider, Dir3, ShapeCastConfig, SpatialQuery, SpatialQueryFilter};
 
@@ -116,7 +117,6 @@ pub fn laser_movement_system(
                 }
                 None => {
                     tf.translation += remaining;
-                    remaining = Vec3::ZERO;
                     break;
                 }
             }

@@ -36,8 +36,8 @@ const LASER_DAMAGE: i32 = 5;
 
 fn laser_hit_system(
     mut commands: Commands,
-    mut lasers: Query<(&mut Transform, &mut Laser)>,
-    mut targets: Query<(Entity, &Transform, &mut Target)>,
+    mut lasers: Query<(&mut Transform, &mut Laser), Without<Target>>,
+    mut targets: Query<(Entity, &Transform, &mut Target), Without<Laser>>,
 ) {
     for (mut laser_tf, mut laser) in &mut lasers {
         info!("laser hit system: checking for hits");
@@ -47,7 +47,7 @@ fn laser_hit_system(
             if dist < 1.0 {
                 info!("target hit at {dist:.2}: {} HP before", target.hp);
                 if target.hp <= LASER_DAMAGE {
-                    commands.entity(target_entity).despawn_recursive();
+                    commands.entity(target_entity).despawn();
                 } else {
                     target.hp -= LASER_DAMAGE;
                     info!("target hp now {}", target.hp);
