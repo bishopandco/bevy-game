@@ -65,7 +65,7 @@ fn player_move_system(
             plyr.half_extents.y,
             plyr.half_extents.z,
         );
-        move_horizontal(&spatial, entity, &col, &mut tf, &mut plyr, dt);
+        move_horizontal(&spatial, &params, entity, &col, &mut tf, &mut plyr, dt);
         move_vertical(&spatial, &params, entity, &col, &mut tf, &mut plyr, dt);
     }
 }
@@ -101,6 +101,7 @@ fn update_yaw(keys: &ButtonInput<KeyCode>, params: &GameParams, plyr: &mut Playe
 
 fn move_horizontal(
     spatial: &SpatialQuery,
+    params: &GameParams,
     entity: Entity,
     col: &Collider,
     tf: &mut Transform,
