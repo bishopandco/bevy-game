@@ -11,6 +11,8 @@ use game_demo::minimap::MiniMapPlugin;
 use game_demo::sky::SkyDomePlugin;
 use game_demo::world::WorldPlugin;
 use game_demo::targets::TargetsPlugin;
+use game_demo::goals::GoalsPlugin;
+use game_demo::lap_timer::LapTimerPlugin;
 
 fn main() {
     App::new()
@@ -24,6 +26,7 @@ fn main() {
         .add_plugins((
             WorldPlugin,
             TargetsPlugin,
+            GoalsPlugin,
             SkyDomePlugin,
             PlayerControlPlugin,
             WeaponPlugin,
@@ -31,6 +34,7 @@ fn main() {
             MiniMapPlugin,
             HudPlugin,
             WeaponHudPlugin,
+            LapTimerPlugin,
         ))
         .add_plugins(DebugUiPlugin)
         .run();
