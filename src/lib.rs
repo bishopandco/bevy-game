@@ -9,3 +9,5 @@ pub mod world;
 pub mod sky;
 pub mod weapons;
 pub mod targets;
+pub mod goals;
+pub mod lap_timer;
