@@ -123,7 +123,8 @@ pub fn laser_movement_system(
         }
 
         if laser.velocity.length_squared() > 0.0 {
-            tf.look_at(tf.translation + laser.velocity, Vec3::Y);
+            let look_at_pos = tf.translation + laser.velocity;
+            tf.look_at(look_at_pos, Vec3::Y);
         }
 
         laser.life -= dt;
