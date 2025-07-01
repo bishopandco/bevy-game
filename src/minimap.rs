@@ -49,8 +49,8 @@ fn minimap_follow_system(
     player_q: Query<&Transform, (With<Player>, Without<MinimapCamera>)>,
     mut cam_q: Query<&mut Transform, With<MinimapCamera>>,
 ) {
-    let Ok(player_tf) = player_q.get_single() else { return; };
-    let Ok(mut cam_tf) = cam_q.get_single_mut() else { return; };
+    let Ok(player_tf) = player_q.single() else { return; };
+    let Ok(mut cam_tf) = cam_q.single_mut() else { return; };
     cam_tf.translation.x = player_tf.translation.x;
     cam_tf.translation.z = player_tf.translation.z;
     cam_tf.look_at(player_tf.translation, Vec3::Y);

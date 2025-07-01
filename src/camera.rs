@@ -24,7 +24,7 @@ fn setup_camera(
         return;
     }
 
-    if let Ok(player_tf) = player_q.get_single() {
+    if let Ok(player_tf) = player_q.single() {
         let forward = player_tf.rotation * Vec3::Z;
         let cam_pos =
             player_tf.translation - forward * params.cam_distance + Vec3::Y * params.cam_height;
@@ -42,7 +42,7 @@ fn follow_camera_system(
     mut cam_q: Query<&mut Transform, With<FollowCamera>>,
     target_q: Query<&Transform, (With<Player>, Without<FollowCamera>)>,
 ) {
-    let Ok(target_tf) = target_q.get_single() else {
+    let Ok(target_tf) = target_q.single() else {
         return;
     };
 

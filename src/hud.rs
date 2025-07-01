@@ -57,7 +57,7 @@ fn update_speedometer(
     players: Query<&Player>,
     mut q: Query<&mut Transform, With<Speedometer>>,
 ) {
-    let Ok(player) = players.get_single() else {
+    let Ok(player) = players.single() else {
         return;
     };
     let mut speed_ratio = player.speed.abs() / params.max_speed.max(f32::EPSILON);
