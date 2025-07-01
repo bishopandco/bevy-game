@@ -8,7 +8,8 @@ use bevy::{
 
 const STEP_HEIGHT: f32 = 0.25;
 const MAX_SLOPE_COS: f32 = 0.707;
-const SKIN: f32 = 0.03;
+// Extra distance to keep from geometry when resolving collisions
+const SKIN: f32 = 0.05;
 const FALL_RESET_Y: f32 = -100.0;
 const RESPAWN_POS: Vec3 = Vec3::new(0.0, 1.5, 0.0);
 const RESPAWN_YAW: f32 = 0.0;
@@ -125,6 +126,7 @@ fn move_horizontal(
             tf.rotation,
             dir,
             &ShapeCastConfig {
+                compute_contact_on_penetration: true,
                 max_distance: dist + SKIN,
                 ..Default::default()
             },
@@ -163,7 +165,8 @@ fn slide(remaining: &mut Vec3, normal: Vec3, plyr: &mut Player, params: &GamePar
 
     // add a small bounce based on collision angle
     let reflect_dir = (incoming - 2.0 * incoming.dot(normal) * normal).normalize_or_zero();
-    let bounce = incoming.length() * params.bounce_factor * (1.0 - normal.y.abs());
+    let incident_angle = incoming.normalize_or_zero().dot(-normal).abs();
+    let bounce = incoming.length() * params.bounce_factor * incident_angle;
     *remaining += reflect_dir * bounce;
 }
 
