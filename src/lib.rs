@@ -11,3 +11,4 @@ pub mod weapons;
 pub mod targets;
 pub mod goals;
 pub mod lap_timer;
+pub mod socket_client;
