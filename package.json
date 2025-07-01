@@ -1,0 +1,20 @@
+{
+  "name": "bevy-game-api",
+  "version": "0.0.1",
+  "description": "api for bevy-game-demo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-apigatewaymanagementapi": "^3.840.0",
+    "@aws-sdk/client-dynamodb": "^3.840.0",
+    "electrodb": "^3.4.3",
+    "sst": "3.17.8"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "8.10.150"
+  }
+}
