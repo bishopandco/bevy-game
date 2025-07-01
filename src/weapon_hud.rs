@@ -65,6 +65,6 @@ fn position_weapon_charge(
     let size = window.unwrap().resolution.physical_size();
     for mut tf in &mut q {
         tf.translation.x = -(size.x as f32 / 4.0) + 20.0;
-        tf.translation.y = -(size.y as f32 / 4.0) + 130.0;
+        tf.translation.y = -(size.y as f32 / 4.0) + 150.0;
     }
 }
