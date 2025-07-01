@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "baseUrl": "./",
+    "paths": {
+      "@/socket/*": [
+        "./socket/*"
+      ]
+    },
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  // Limit TypeScript to API and test files only
+  "include": [
+    "socket/**/*",
+    "tests/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    ".sst",
+    "admin"
+  ]
+}
