@@ -9,7 +9,10 @@ use bevy::{
 const STEP_HEIGHT: f32 = 0.25;
 const MAX_SLOPE_COS: f32 = 0.707;
 // Extra distance to keep from geometry when resolving collisions
-const SKIN: f32 = 0.05;
+// Slightly larger skin helps prevent the player from getting stuck in meshes
+const SKIN: f32 = 0.1;
+// Number of physics sub-steps per frame to improve collision robustness
+const SUBSTEPS: u32 = 4;
 const FALL_RESET_Y: f32 = -100.0;
 const RESPAWN_POS: Vec3 = Vec3::new(0.0, 1.5, 0.0);
 const RESPAWN_YAW: f32 = 0.0;
@@ -59,15 +62,17 @@ fn player_move_system(
     spatial: SpatialQuery,
     mut q: Query<(Entity, &mut Transform, &mut Player)>,
 ) {
-    let dt = time.delta_secs();
+    let dt = time.delta_secs() / SUBSTEPS as f32;
     for (entity, mut tf, mut plyr) in &mut q {
         let col = Collider::cuboid(
             plyr.half_extents.x,
             plyr.half_extents.y,
             plyr.half_extents.z,
         );
-        move_horizontal(&spatial, &params, entity, &col, &mut tf, &mut plyr, dt);
-        move_vertical(&spatial, &params, entity, &col, &mut tf, &mut plyr, dt);
+        for _ in 0..SUBSTEPS {
+            move_horizontal(&spatial, &params, entity, &col, &mut tf, &mut plyr, dt);
+            move_vertical(&spatial, &params, entity, &col, &mut tf, &mut plyr, dt);
+        }
     }
 }
 
