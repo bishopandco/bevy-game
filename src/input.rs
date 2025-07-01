@@ -134,7 +134,7 @@ fn move_horizontal(
                 if hit.normal1.y > MAX_SLOPE_COS {
                     plyr.grounded = true;
                 }
-                slide(&mut remaining, hit.normal1);
+                slide(&mut remaining, hit.normal1, plyr, params);
             }
             None => {
                 tf.translation += remaining;
@@ -144,9 +144,18 @@ fn move_horizontal(
     }
 }
 
-fn slide(remaining: &mut Vec3, normal: Vec3) {
+fn slide(remaining: &mut Vec3, normal: Vec3, plyr: &mut Player, params: &GameParams) {
     // Project the movement onto the collision plane to keep momentum
     *remaining = *remaining - remaining.dot(normal) * normal;
+    // reduce momentum based on collision
+    let mut factor = 1.0 - params.collision_damping;
+    if normal.y > 0.0 && normal.y < 1.0 {
+        let slope = 1.0 - normal.y;
+        factor *= 1.0 - slope * params.slope_damping;
+    }
+    factor = factor.clamp(0.0, 1.0);
+    *remaining *= factor;
+    plyr.speed *= factor;
 }
 
 fn move_vertical(

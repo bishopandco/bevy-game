@@ -20,6 +20,8 @@ pub struct GameParams {
     pub gravity: f32,
     pub yaw_rate: f32,
     pub fire_rate: f32,
+    pub collision_damping: f32,
+    pub slope_damping: f32,
 }
 
 impl Default for GameParams {
@@ -41,6 +43,8 @@ impl Default for GameParams {
             gravity: 9.81,
             yaw_rate: std::f32::consts::PI / 2.0,
             fire_rate: 5.0,
+            collision_damping: 0.4,
+            slope_damping: 0.2,
         }
     }
 }
