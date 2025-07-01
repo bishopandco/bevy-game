@@ -145,7 +145,6 @@ fn move_horizontal(
 }
 
 fn slide(remaining: &mut Vec3, normal: Vec3) {
-    // Project the movement onto the collision plane to keep momentum
     *remaining = *remaining - remaining.dot(normal) * normal;
 }
 
