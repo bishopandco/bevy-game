@@ -13,11 +13,15 @@ avian3d = { version = "0.3", features = ["debug-plugin", "bevy_scene"] }
 bevy_egui = { git = "https://github.com/mvlabat/bevy_egui", branch = "main" }
 bevy_svg = "0.16.0-rc1"
 futures-util = "0.3"
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync"] }
-tokio-tungstenite = { version = "0.27", default-features = false, features = ["connect", "rustls-tls-native-roots"] }
-rustls = { version = "0.23", features = ["ring"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync"], optional = true }
+tokio-tungstenite = { version = "0.27", default-features = false, features = ["connect", "rustls-tls-native-roots"], optional = true }
+rustls = { version = "0.23", features = ["ring"], optional = true }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
+
+[features]
+default = ["net"]
+net = ["tokio", "tokio-tungstenite", "rustls"]
 
 
 # Optional physics / debug helpers (comment out until you need them)

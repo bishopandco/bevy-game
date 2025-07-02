@@ -11,5 +11,7 @@ pub mod weapons;
 pub mod targets;
 pub mod goals;
 pub mod lap_timer;
+#[cfg(feature = "net")]
 pub mod socket_client;
+#[cfg(feature = "net")]
 pub mod chat;

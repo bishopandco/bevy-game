@@ -1,3 +1,5 @@
+#![cfg(feature = "net")]
+
 use bevy::prelude::*;
 use bevy::log::info;
 use bevy_egui::{egui, EguiContexts};

@@ -2,7 +2,7 @@
 set -e
 
 # Compile the game for the wasm32 target
-cargo build --release --target wasm32-unknown-unknown
+cargo build --release --target wasm32-unknown-unknown --no-default-features
 
 # Generate JS bindings for the web target
 wasm-bindgen ./target/wasm32-unknown-unknown/release/game_demo.wasm \

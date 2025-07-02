@@ -13,7 +13,9 @@ use game_demo::world::WorldPlugin;
 use game_demo::targets::TargetsPlugin;
 use game_demo::goals::GoalsPlugin;
 use game_demo::lap_timer::LapTimerPlugin;
+#[cfg(feature = "net")]
 use game_demo::socket_client::SocketClientPlugin;
+#[cfg(feature = "net")]
 use game_demo::chat::ChatPlugin;
 
 fn main() {
@@ -37,7 +39,9 @@ fn main() {
             HudPlugin,
             WeaponHudPlugin,
             LapTimerPlugin,
+            #[cfg(feature = "net")]
             SocketClientPlugin,
+            #[cfg(feature = "net")]
             ChatPlugin,
         ))
         .add_plugins(DebugUiPlugin)

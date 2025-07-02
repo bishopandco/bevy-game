@@ -13,3 +13,5 @@ npm install
 npm run dev
 ```
 
+The frontend expects the compiled game to be served from `/wasm/game_demo.js`.
+
