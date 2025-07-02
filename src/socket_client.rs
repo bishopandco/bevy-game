@@ -3,6 +3,7 @@ use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
 use tokio::runtime::Runtime;
 use futures_util::StreamExt;
 use tokio_tungstenite::connect_async;
+use rustls::crypto::CryptoProvider;
 
 use crate::globals::GameParams;
 
@@ -15,6 +16,7 @@ pub struct SocketClient {
 
 impl Default for SocketClient {
     fn default() -> Self {
+        CryptoProvider::install_default().expect("failed to install CryptoProvider");
         Self {
             runtime: Runtime::new().expect("failed to create Tokio runtime"),
             connected: Arc::new(AtomicBool::new(false)),
