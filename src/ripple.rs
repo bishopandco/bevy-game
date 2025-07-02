@@ -5,14 +5,14 @@ use bevy::{
         view::{Layer, RenderLayers},
     },
     math::primitives::Rectangle,
-    sprite::MeshMaterial2d,
+    sprite::{Material2d, Material2dPlugin, MeshMaterial2d},
     render::mesh::Mesh2d,
 };
 
 use crate::hud::HUD_LAYER;
 use crate::input::CollisionEvent;
 
-#[derive(AsBindGroup, TypePath, Debug, Clone)]
+#[derive(Asset, AsBindGroup, TypePath, Debug, Clone)]
 pub struct RippleMaterial {
     #[texture(0)]
     #[sampler(1)]
@@ -57,7 +57,7 @@ fn setup_ripple(
     windows: Query<&Window>,
 ) {
     let window = windows.single();
-    let size = window.unwrap().resolution.physical_size();
+    let size = window.resolution.physical_size();
     let mesh = meshes.add(Mesh::from(Rectangle::new(
         size.x as f32,
         size.y as f32,
