@@ -64,10 +64,12 @@ export const sendMessage = async (
   context: Context
 ): Promise<APIGatewayProxyResult> => {
   console.log("🟣 Sending message to all connections", event.body);
+  console.log("Request context", event.requestContext);
 
   const apiGatewayManagementApi = new ApiGatewayManagementApiClient({
     endpoint: `https://${event.requestContext.domainName}/${event.requestContext.stage}`,
   });
+  console.log("Management API endpoint", apiGatewayManagementApi.config.endpoint);
 
   try {
     const result = await ConnectionEntity.find({}).go();

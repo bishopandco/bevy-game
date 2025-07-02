@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::log::info;
 use std::sync::{atomic::{AtomicBool, Ordering}, Arc};
 use tokio::runtime::Runtime;
 use futures_util::{SinkExt, StreamExt};
@@ -40,6 +41,7 @@ impl SocketClient {
     /// Sends a text message over the socket if connected.
     pub fn send(&self, text: String) {
         if let Some(tx) = &self.sender {
+            info!("Queueing outgoing message: {text}");
             let _ = tx.send(text);
         }
     }
@@ -48,7 +50,10 @@ impl SocketClient {
     pub fn try_recv(&mut self) -> Option<String> {
         if let Some(rx) = &mut self.receiver {
             match rx.try_recv() {
-                Ok(msg) => Some(msg),
+                Ok(msg) => {
+                    info!("Incoming message: {msg}");
+                    Some(msg)
+                },
                 Err(_) => None,
             }
         } else {
@@ -80,6 +85,7 @@ fn connect_socket(mut client: ResMut<SocketClient>, params: Res<GameParams>) {
     client.runtime.spawn(async move {
         match connect_async(&url).await {
             Ok((ws, _)) => {
+                info!("Socket connected to {url}");
                 status.store(true, Ordering::SeqCst);
                 let (mut write, mut read) = ws.split();
 
@@ -101,6 +107,7 @@ fn connect_socket(mut client: ResMut<SocketClient>, params: Res<GameParams>) {
 
                 let _ = tokio::join!(send_task, recv_task);
                 status.store(false, Ordering::SeqCst);
+                info!("Socket disconnected");
             }
             Err(e) => {
                 eprintln!("Socket connection error: {e}");
