@@ -2,7 +2,7 @@ import { Entity } from "electrodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
 const client = new DynamoDBClient({ region: "us-east-1" });
-const table = "bevy-game-api-michaelbishop-BevyTableTable-ctfbwhnt";
+const table = "bevy-game-api-production-BevyTableTable-hwsbrscz";
 
 export interface ConnectionsCollection {
   connections: Connection[];

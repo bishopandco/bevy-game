@@ -50,7 +50,7 @@ impl Default for GameParams {
             slope_damping: 0.2,
             slope_ease: 0.5,
             bounce_factor: 0.05,
-            socket_url: "wss://1bcl2653vl.execute-api.us-east-1.amazonaws.com/$default".to_string(),
+            socket_url: "wss://535rf3b3kk.execute-api.us-east-1.amazonaws.com/$default".to_string(),
         }
     }
 }
