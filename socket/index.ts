@@ -91,7 +91,7 @@ export const sendMessage = async (
         await apiGatewayManagementApi.send(
           new PostToConnectionCommand({
             ConnectionId: connection,
-            Data: event.body || "{}",
+            Data: Buffer.from(event.body ?? "{}"),
           })
         );
       } catch (error) {

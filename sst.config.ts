@@ -55,7 +55,8 @@ export default $config({
 
     socket.route("$connect", "socket/index.connect");
     socket.route("$disconnect", "socket/index.disconnect");
-    socket.route("defaultHandler", "socket/index.defaultHandler");
+    // Handle all incoming messages via the default route
+    socket.route("$default", "socket/index.sendMessage");
 
     return {
       socketUrl: socket.url,
