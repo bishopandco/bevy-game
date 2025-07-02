@@ -5,7 +5,8 @@ use bevy::{
         view::{Layer, RenderLayers},
     },
     math::primitives::Rectangle,
-    sprite::{Mesh2d, MeshMaterial2d},
+    sprite::MeshMaterial2d,
+    render::mesh::Mesh2d,
 };
 
 use crate::hud::HUD_LAYER;
@@ -80,12 +81,12 @@ fn update_ripple(
     time: Res<Time>,
     mut state: ResMut<RippleState>,
     mut materials: ResMut<Assets<RippleMaterial>>,
-    q: Query<&Handle<RippleMaterial>, With<RippleOverlay>>,
+    q: Query<&MeshMaterial2d<RippleMaterial>, With<RippleOverlay>>,
 ) {
     state.time += time.delta_seconds();
     state.intensity = (state.intensity - time.delta_seconds()).max(0.0);
-    for handle in &q {
-        if let Some(mat) = materials.get_mut(handle) {
+    for mat_handle in q.iter() {
+        if let Some(mat) = materials.get_mut(&mat_handle.0) {
             mat.time = state.time;
             mat.intensity = state.intensity;
         }
