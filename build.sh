@@ -1,18 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
-# Compile the game for the wasm32 target
-cargo build --release --target wasm32-unknown-unknown --no-default-features
+# Build the wasm package using wasm-pack
+wasm-pack build --release --target web --out-dir frontend/src/wasm/pkg -- --no-default-features
 
-# Generate JS bindings for the web target
-wasm-bindgen ./target/wasm32-unknown-unknown/release/game_demo.wasm \
-  --out-dir web --out-name game_demo --target web
+# Optimize the resulting wasm if wasm-opt is available
+if command -v wasm-opt >/dev/null 2>&1; then
+  wasm-opt -Os -o frontend/src/wasm/pkg/game_demo_bg.wasm frontend/src/wasm/pkg/game_demo_bg.wasm
+fi
 
-# Optimize the resulting wasm
-wasm-opt -Os -o web/game_demo_bg.wasm web/game_demo_bg.wasm
-
-# Copy the build output into the frontend so it can be served by Vite
-mkdir -p frontend/public/wasm
-cp web/game_demo.js frontend/public/wasm/
-cp web/game_demo_bg.wasm frontend/public/wasm/
 

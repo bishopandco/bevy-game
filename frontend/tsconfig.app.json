@@ -3,6 +3,12 @@
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
 
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "esnext",
+    "allowSyntheticDefaultImports": true,
+    "types": ["vite/client"],
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,

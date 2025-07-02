@@ -6,13 +6,13 @@ Learn more about the recommended Project Setup and IDE Support in the [Vue Docs 
 
 ## Running the game
 
-After building the Rust code to WebAssembly using `../../build.sh`, start the development server:
+After running `../../build.sh` to generate the wasm bindings, start the development server:
 
 ```bash
 npm install
 npm run dev
 ```
 
-The compiled loader (`game_demo.js`) and wasm (`game_demo_bg.wasm`) are expected
-to be available under `/wasm`.
+The build places the loader and wasm binary in `src/wasm/pkg` so Vite can bundle
+them automatically.
 

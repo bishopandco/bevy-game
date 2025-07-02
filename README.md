@@ -9,17 +9,16 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
 ## Build for the web
-The `build.sh` script compiles the game to WebAssembly and copies the results
-into the Vue application. The build requires the `wasm-bindgen-cli`,
-`bindgen-cli`, and `wasm-opt` tools on your PATH. It produces `game_demo.js`
-and `game_demo_bg.wasm` in `frontend/public/wasm` for Vite to load.
+The `build.sh` script uses `wasm-pack` to compile the game and place the
+generated bindings under `frontend/src/wasm/pkg`. Ensure that `wasm-pack` and
+`wasm-opt` are on your `PATH`.
 
 ```bash
 ./build.sh
 ```
 
-The generated files are placed in `frontend/public/wasm` so that they are served
-by Vite.
+The generated files are imported directly from the source tree so Vite can bundle
+them automatically.
 
 # Roadmap
 - [x] Compile to WASM
