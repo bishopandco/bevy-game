@@ -9,6 +9,54 @@ import {
 } from "@aws-sdk/client-apigatewaymanagementapi";
 import { ConnectionEntity } from "./models/connection";
 
+async function broadcast(
+  event: APIGatewayProxyEvent,
+  body: string,
+  exclude?: string
+): Promise<APIGatewayProxyResult> {
+  const apiGatewayManagementApi = new ApiGatewayManagementApiClient({
+    endpoint: `https://${event.requestContext.domainName}/${event.requestContext.stage}`,
+  });
+
+  try {
+    const result = await ConnectionEntity.find({}).go();
+
+    if (!result.data || result.data.length === 0) {
+      console.warn("⚠️ No active connections found.");
+      return { statusCode: 200, body: "No connections to send to." };
+    }
+
+    const postCalls = result.data.map(async (item) => {
+      const connection = item.connection;
+      if (connection === exclude) return;
+
+      try {
+        await apiGatewayManagementApi.send(
+          new PostToConnectionCommand({
+            ConnectionId: connection,
+            Data: Buffer.from(body ?? "{}"),
+          })
+        );
+      } catch (error) {
+        // @ts-ignore
+        if (error.statusCode === 410) {
+          console.log(`🚨 Stale connection found, deleting: ${connection}`);
+          await ConnectionEntity.delete({ connection }).go();
+        } else {
+          console.error(`❌ Error sending message to ${connection}`, error);
+        }
+      }
+    });
+
+    await Promise.all(postCalls);
+
+    return { statusCode: 200, body: "Message sent." };
+  } catch (error) {
+    console.error("🔥 Error broadcasting messages", error);
+    return { statusCode: 500, body: "Failed to send messages." };
+  }
+}
+
 export const connect = async (
   event: APIGatewayProxyEvent,
   context: Context
@@ -22,6 +70,12 @@ export const connect = async (
       user: "anonymous",
     }).go();
     console.log("🟢 Connection saved", result);
+
+    await broadcast(
+      event,
+      JSON.stringify({ action: "playerJoin", id: connection }),
+      connection
+    );
 
     return { statusCode: 200, body: "Connected." };
   } catch (error) {
@@ -68,47 +122,17 @@ export const sendMessage = async (
     `ConnectionId ${event.requestContext.connectionId} domain ${event.requestContext.domainName} stage ${event.requestContext.stage}`
   );
 
-  const apiGatewayManagementApi = new ApiGatewayManagementApiClient({
-    endpoint: `https://${event.requestContext.domainName}/${event.requestContext.stage}`,
-  });
-  console.log("Management API endpoint", apiGatewayManagementApi.config.endpoint);
+  return broadcast(event, event.body ?? "{}", undefined);
+};
 
-  try {
-    const result = await ConnectionEntity.find({}).go();
-
-    if (!result.data || result.data.length === 0) {
-      console.warn("⚠️ No active connections found.");
-      return { statusCode: 200, body: "No connections to send to." };
-    }
-
-    console.log(`🟢 Found ${result.data.length} connections`);
-
-    const postCalls = result.data.map(async (item) => {
-      const connection = item.connection;
-      console.log(`🔹 Sending to connection: ${connection}`);
-
-      try {
-        await apiGatewayManagementApi.send(
-          new PostToConnectionCommand({
-            ConnectionId: connection,
-            Data: Buffer.from(event.body ?? "{}"),
-          })
-        );
-      } catch (error) {
-        if (error.statusCode === 410) {
-          console.log(`🚨 Stale connection found, deleting: ${connection}`);
-          await ConnectionEntity.delete({ connection }).go();
-        } else {
-          console.error(`❌ Error sending message to ${connection}`, error);
-        }
-      }
-    });
-
-    await Promise.all(postCalls);
-
-    return { statusCode: 200, body: "Message sent to all connections." };
-  } catch (error) {
-    console.error("🔥 Error sending messages", error);
-    return { statusCode: 500, body: "Failed to send messages." };
-  }
+export const playerMove = async (
+  event: APIGatewayProxyEvent,
+  context: Context
+): Promise<APIGatewayProxyResult> => {
+  console.log("🟠 Player movement received", event.body);
+  return broadcast(
+    event,
+    event.body ?? "{}",
+    event.requestContext.connectionId
+  );
 };

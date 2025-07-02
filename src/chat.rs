@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use bevy::log::info;
 use bevy_egui::{egui, EguiContexts};
 
+use crate::multiplayer::ChatMessage;
 use crate::socket_client::SocketClient;
 
 #[derive(Resource, Default)]
@@ -20,10 +21,10 @@ impl Plugin for ChatPlugin {
     }
 }
 
-fn receive_messages(mut client: ResMut<SocketClient>, mut log: ResMut<ChatLog>) {
-    while let Some(msg) = client.try_recv() {
-        info!("Received message: {}", msg);
-        log.messages.push(msg);
+fn receive_messages(mut events: EventReader<ChatMessage>, mut log: ResMut<ChatLog>) {
+    for ev in events.read() {
+        info!("Received chat message: {}", ev.0);
+        log.messages.push(ev.0.clone());
     }
 }
 

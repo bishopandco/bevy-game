@@ -58,6 +58,20 @@ impl SocketClient {
         }
     }
 
+    /// Sends a raw json payload.
+    pub fn send_json(&self, value: serde_json::Value) {
+        if !self.is_connected() {
+            info!("WebSocket is not open");
+            return;
+        }
+
+        if let Some(tx) = &self.sender {
+            let payload = value.to_string();
+            info!("Queueing outgoing message: {}", payload);
+            let _ = tx.send(payload);
+        }
+    }
+
     /// Attempts to receive a text message from the socket.
     pub fn try_recv(&mut self) -> Option<String> {
         if let Some(rx) = &mut self.receiver {

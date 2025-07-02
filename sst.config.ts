@@ -62,6 +62,7 @@ export default $config({
     socket.route("$disconnect", "socket/index.disconnect");
     // Explicitly handle chat messages on the sendMessage route
     socket.route("sendMessage", standaloneFunction.arn);
+    socket.route("playerMove", "socket/index.playerMove");
 
     return {
       socketUrl: socket.url,
