@@ -15,7 +15,7 @@ bevy_svg = "0.16.0-rc1"
 futures-util = "0.3"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 tokio-tungstenite = { version = "0.27", default-features = false, features = ["connect", "rustls-tls-native-roots"] }
-rustls = "0.23"
+rustls = { version = "0.23", features = ["ring"] }
 
 
 # Optional physics / debug helpers (comment out until you need them)

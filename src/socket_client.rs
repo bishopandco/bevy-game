@@ -16,7 +16,8 @@ pub struct SocketClient {
 
 impl Default for SocketClient {
     fn default() -> Self {
-        CryptoProvider::install_default(ring_provider())
+        ring_provider()
+            .install_default()
             .expect("failed to install CryptoProvider");
         Self {
             runtime: Runtime::new().expect("failed to create Tokio runtime"),
