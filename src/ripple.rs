@@ -4,8 +4,8 @@ use bevy::{
         render_resource::{AsBindGroup, ShaderRef},
         view::{Layer, RenderLayers},
     },
-    sprite::MaterialMesh2dBundle,
-    render::mesh::shape,
+    math::primitives::Rectangle,
+    sprite::{Mesh2d, MeshMaterial2d},
 };
 
 use crate::hud::HUD_LAYER;
@@ -57,10 +57,10 @@ fn setup_ripple(
 ) {
     let window = windows.single();
     let size = window.unwrap().resolution.physical_size();
-    let mesh = meshes.add(Mesh::from(shape::Quad::new(Vec2::new(
+    let mesh = meshes.add(Mesh::from(Rectangle::new(
         size.x as f32,
         size.y as f32,
-    ))));
+    )));
     let texture = asset_server.load("starfield.png");
     let material = materials.add(RippleMaterial {
         color_texture: texture,
@@ -68,12 +68,9 @@ fn setup_ripple(
         intensity: 0.0,
     });
     commands.spawn((
-        MaterialMesh2dBundle {
-            mesh: mesh.into(),
-            material,
-            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.1)),
-            ..default()
-        },
+        Mesh2d(mesh),
+        MeshMaterial2d(material),
+        Transform::from_translation(Vec3::new(0.0, 0.0, 0.1)),
         RippleOverlay,
         RenderLayers::layer(HUD_LAYER as Layer),
     ));
