@@ -6,6 +6,9 @@ use bevy::{
     prelude::*,
 };
 
+#[derive(Event, Default)]
+pub struct CollisionEvent;
+
 const STEP_HEIGHT: f32 = 0.25;
 const MAX_SLOPE_COS: f32 = 0.707;
 // Extra distance to keep from geometry when resolving collisions
@@ -31,7 +34,8 @@ pub struct Player {
 pub struct PlayerControlPlugin;
 impl Plugin for PlayerControlPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
+        app.add_event::<CollisionEvent>()
+            .add_systems(
             Update,
             (
                 player_input_system,
@@ -60,6 +64,7 @@ fn player_move_system(
     time: Res<Time>,
     params: Res<GameParams>,
     spatial: SpatialQuery,
+    mut collision_writer: EventWriter<CollisionEvent>,
     mut q: Query<(Entity, &mut Transform, &mut Player)>,
 ) {
     let dt = time.delta_secs() / SUBSTEPS as f32;
@@ -70,8 +75,26 @@ fn player_move_system(
             plyr.half_extents.z,
         );
         for _ in 0..SUBSTEPS {
-            move_horizontal(&spatial, &params, entity, &col, &mut tf, &mut plyr, dt);
-            move_vertical(&spatial, &params, entity, &col, &mut tf, &mut plyr, dt);
+            move_horizontal(
+                &spatial,
+                &params,
+                entity,
+                &col,
+                &mut tf,
+                &mut plyr,
+                dt,
+                &mut collision_writer,
+            );
+            move_vertical(
+                &spatial,
+                &params,
+                entity,
+                &col,
+                &mut tf,
+                &mut plyr,
+                dt,
+                &mut collision_writer,
+            );
         }
     }
 }
@@ -113,6 +136,7 @@ fn move_horizontal(
     tf: &mut Transform,
     plyr: &mut Player,
     dt: f32,
+    writer: &mut EventWriter<CollisionEvent>,
 ) {
     let yaw_rot = Quat::from_rotation_y(plyr.yaw);
     let forward = yaw_rot * Vec3::Z;
@@ -143,6 +167,7 @@ fn move_horizontal(
                     plyr.grounded = true;
                 }
                 slide(&mut remaining, hit.normal1, plyr, params);
+                writer.write(CollisionEvent);
             }
             None => {
                 tf.translation += remaining;
@@ -183,6 +208,7 @@ fn move_vertical(
     tf: &mut Transform,
     plyr: &mut Player,
     dt: f32,
+    writer: &mut EventWriter<CollisionEvent>,
 ) {
     // re-check ground contact before applying gravity
     apply_ground_snap(spatial, entity, tf, plyr);
@@ -195,7 +221,7 @@ fn move_vertical(
         plyr.vertical_vel -= params.gravity * dt;
     }
     tf.translation.y += plyr.vertical_vel * dt;
-    resolve_vertical_collision(spatial, entity, col, tf, plyr);
+    resolve_vertical_collision(spatial, entity, col, tf, plyr, writer);
 }
 
 fn resolve_vertical_collision(
@@ -204,6 +230,7 @@ fn resolve_vertical_collision(
     col: &Collider,
     tf: &mut Transform,
     plyr: &mut Player,
+    writer: &mut EventWriter<CollisionEvent>,
 ) {
     let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
     if let Some(hit) = spatial.cast_shape(
@@ -221,6 +248,7 @@ fn resolve_vertical_collision(
         tf.translation.y = hit.point1.y + plyr.half_extents.y + SKIN;
         plyr.grounded = true;
         plyr.vertical_vel = 0.0;
+        writer.write(CollisionEvent);
     }
 }
 

@@ -7,6 +7,7 @@ pub mod hud;
 pub mod weapon_hud;
 pub mod world;
 pub mod sky;
+pub mod ripple;
 pub mod weapons;
 pub mod targets;
 pub mod goals;

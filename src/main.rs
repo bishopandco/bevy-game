@@ -15,6 +15,7 @@ use game_demo::goals::GoalsPlugin;
 use game_demo::lap_timer::LapTimerPlugin;
 use game_demo::socket_client::SocketClientPlugin;
 use game_demo::chat::ChatPlugin;
+use game_demo::ripple::RipplePlugin;
 
 fn main() {
     App::new()
@@ -36,6 +37,7 @@ fn main() {
             MiniMapPlugin,
             HudPlugin,
             WeaponHudPlugin,
+            RipplePlugin,
             LapTimerPlugin,
             SocketClientPlugin,
             ChatPlugin,
