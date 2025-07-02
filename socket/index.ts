@@ -122,7 +122,53 @@ export const sendMessage = async (
     `ConnectionId ${event.requestContext.connectionId} domain ${event.requestContext.domainName} stage ${event.requestContext.stage}`
   );
 
-  return broadcast(event, event.body ?? "{}", undefined);
+  const apiGatewayManagementApi = new ApiGatewayManagementApiClient({
+    endpoint: `https://${event.requestContext.domainName}/${event.requestContext.stage}`,
+  });
+  console.log(
+    "Management API endpoint",
+    apiGatewayManagementApi.config.endpoint
+  );
+
+  try {
+    const result = await ConnectionEntity.find({}).go();
+
+    if (!result.data || result.data.length === 0) {
+      console.warn("⚠️ No active connections found.");
+      return { statusCode: 200, body: "No connections to send to." };
+    }
+
+    console.log(`🟢 Found ${result.data.length} connections`);
+
+    const postCalls = result.data.map(async (item) => {
+      const connection = item.connection;
+      console.log(`🔹 Sending to connection: ${connection}`);
+
+      try {
+        await apiGatewayManagementApi.send(
+          new PostToConnectionCommand({
+            ConnectionId: connection,
+            Data: Buffer.from(event.body ?? "{}"),
+          })
+        );
+      } catch (error) {
+        // @ts-ignore
+        if (error.statusCode === 410) {
+          console.log(`🚨 Stale connection found, deleting: ${connection}`);
+          await ConnectionEntity.delete({ connection }).go();
+        } else {
+          console.error(`❌ Error sending message to ${connection}`, error);
+        }
+      }
+    });
+
+    await Promise.all(postCalls);
+
+    return { statusCode: 200, body: "Message sent to all connections." };
+  } catch (error) {
+    console.error("🔥 Error sending messages", error);
+    return { statusCode: 500, body: "Failed to send messages." };
+  }
 };
 
 export const playerMove = async (
