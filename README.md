@@ -10,8 +10,9 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 ## Build for the web
 The `build.sh` script uses `wasm-pack` to compile the game and place the
-generated bindings under `frontend/src/wasm/pkg`. Ensure that `wasm-pack` and
-`wasm-opt` are on your `PATH`.
+generated bindings under `frontend/src/wasm/pkg`. These files are also copied
+to `frontend/public/wasm` so the Vue dev server can load them directly.
+Ensure that `wasm-pack` and `wasm-opt` are on your `PATH`.
 
 ```bash
 ./build.sh

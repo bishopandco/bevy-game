@@ -13,6 +13,7 @@ npm install
 npm run dev
 ```
 
-The build places the loader and wasm binary in `src/wasm/pkg` so Vite can bundle
-them automatically.
+The build places the loader and wasm binary in `src/wasm/pkg` and copies them to
+`public/wasm`. Vite bundles the files from `src/wasm/pkg` while the dev server
+can fetch them from the `public` folder.
 
