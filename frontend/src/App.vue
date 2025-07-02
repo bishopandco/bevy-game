@@ -1,5 +1,11 @@
 <script setup lang="ts">
 import HelloWorld from './components/HelloWorld.vue'
+import { onMounted } from 'vue'
+import { initBevyGame } from './bevyGame'
+
+onMounted(() => {
+  initBevyGame()
+})
 </script>
 
 <template>
