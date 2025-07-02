@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use std::sync::{atomic::{AtomicBool, Ordering}, Arc};
 use tokio::runtime::Runtime;
-use futures_util::StreamExt;
+use futures_util::{SinkExt, StreamExt};
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 use rustls::crypto::{ring::default_provider as ring_provider, CryptoProvider};
