@@ -44,7 +44,7 @@ impl Plugin for SocketClientPlugin {
 }
 
 fn connect_socket(client: Res<SocketClient>, params: Res<GameParams>) {
-    let url = params.socketUrl.clone();
+    let url = params.socket_url.clone();
     let status = client.connected.clone();
     client.runtime.spawn(async move {
         match connect_async(&url).await {

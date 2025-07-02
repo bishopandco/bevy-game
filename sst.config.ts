@@ -51,6 +51,7 @@ export default $config({
 
     return {
       socketUrl: socket.url,
+      table: table.name
     }
 
   },

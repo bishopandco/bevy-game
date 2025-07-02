@@ -7,7 +7,7 @@ import {
   ApiGatewayManagementApiClient,
   PostToConnectionCommand,
 } from "@aws-sdk/client-apigatewaymanagementapi";
-import { ConnectionEntity } from "models/connection";
+import { ConnectionEntity } from "./models/connection";
 
 export const connect = async (
   event: APIGatewayProxyEvent,
