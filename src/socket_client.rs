@@ -1,9 +1,10 @@
 use bevy::prelude::*;
-use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
+use std::sync::{atomic::{AtomicBool, Ordering}, Arc};
 use tokio::runtime::Runtime;
 use futures_util::StreamExt;
-use tokio_tungstenite::connect_async;
-use rustls::crypto::{CryptoProvider, ring::default_provider as ring_provider};
+use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
+use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
+use rustls::crypto::{ring::default_provider as ring_provider, CryptoProvider};
 
 use crate::globals::GameParams;
 
@@ -12,6 +13,8 @@ use crate::globals::GameParams;
 pub struct SocketClient {
     runtime: Runtime,
     connected: Arc<AtomicBool>,
+    sender: Option<UnboundedSender<String>>,
+    receiver: Option<UnboundedReceiver<String>>,
 }
 
 impl Default for SocketClient {
@@ -22,6 +25,8 @@ impl Default for SocketClient {
         Self {
             runtime: Runtime::new().expect("failed to create Tokio runtime"),
             connected: Arc::new(AtomicBool::new(false)),
+            sender: None,
+            receiver: None,
         }
     }
 }
@@ -30,6 +35,25 @@ impl SocketClient {
     /// Returns true if the client is currently connected.
     pub fn is_connected(&self) -> bool {
         self.connected.load(Ordering::SeqCst)
+    }
+
+    /// Sends a text message over the socket if connected.
+    pub fn send(&self, text: String) {
+        if let Some(tx) = &self.sender {
+            let _ = tx.send(text);
+        }
+    }
+
+    /// Attempts to receive a text message from the socket.
+    pub fn try_recv(&mut self) -> Option<String> {
+        if let Some(rx) = &mut self.receiver {
+            match rx.try_recv() {
+                Ok(msg) => Some(msg),
+                Err(_) => None,
+            }
+        } else {
+            None
+        }
     }
 }
 
@@ -43,18 +67,39 @@ impl Plugin for SocketClientPlugin {
     }
 }
 
-fn connect_socket(client: Res<SocketClient>, params: Res<GameParams>) {
+fn connect_socket(mut client: ResMut<SocketClient>, params: Res<GameParams>) {
     let url = params.socket_url.clone();
     let status = client.connected.clone();
+
+    let (tx_in, mut rx_in) = unbounded_channel::<String>();
+    let (tx_out, rx_out) = unbounded_channel::<String>();
+
+    client.sender = Some(tx_in);
+    client.receiver = Some(rx_out);
+
     client.runtime.spawn(async move {
         match connect_async(&url).await {
-            Ok((mut ws, _)) => {
+            Ok((ws, _)) => {
                 status.store(true, Ordering::SeqCst);
-                while let Some(msg) = ws.next().await {
-                    if msg.is_err() {
-                        break;
+                let (mut write, mut read) = ws.split();
+
+                let send_task = tokio::spawn(async move {
+                    while let Some(msg) = rx_in.recv().await {
+                        if write.send(Message::Text(msg)).await.is_err() {
+                            break;
+                        }
                     }
-                }
+                });
+
+                let recv_task = tokio::spawn(async move {
+                    while let Some(Ok(msg)) = read.next().await {
+                        if let Ok(text) = msg.into_text() {
+                            let _ = tx_out.send(text);
+                        }
+                    }
+                });
+
+                let _ = tokio::join!(send_task, recv_task);
                 status.store(false, Ordering::SeqCst);
             }
             Err(e) => {
