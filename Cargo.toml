@@ -13,7 +13,7 @@ avian3d = { version = "0.3", features = ["debug-plugin", "bevy_scene"] }
 bevy_egui = { git = "https://github.com/mvlabat/bevy_egui", branch = "main" }
 bevy_svg = "0.16.0-rc1"
 futures-util = "0.3"
-tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync"] }
 tokio-tungstenite = { version = "0.27", default-features = false, features = ["connect", "rustls-tls-native-roots"] }
 rustls = { version = "0.23", features = ["ring"] }
 

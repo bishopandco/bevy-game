@@ -14,6 +14,7 @@ use game_demo::targets::TargetsPlugin;
 use game_demo::goals::GoalsPlugin;
 use game_demo::lap_timer::LapTimerPlugin;
 use game_demo::socket_client::SocketClientPlugin;
+use game_demo::chat::ChatPlugin;
 
 fn main() {
     App::new()
@@ -37,6 +38,7 @@ fn main() {
             WeaponHudPlugin,
             LapTimerPlugin,
             SocketClientPlugin,
+            ChatPlugin,
         ))
         .add_plugins(DebugUiPlugin)
         .run();
