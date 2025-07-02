@@ -38,8 +38,9 @@ fn chat_ui(mut ctxs: EguiContexts, mut log: ResMut<ChatLog>, client: Res<SocketC
                 ui.input(|i| i.key_pressed(egui::Key::Enter));
             if ui.button("Send").clicked() || send {
                 if !log.input.is_empty() {
-                    client.send(log.input.clone());
-                    log.messages.push(format!("Me: {}", log.input));
+                    let input_clone = log.input.clone();
+                    client.send(input_clone.clone());
+                    log.messages.push(format!("Me: {}", input_clone));
                     log.input.clear();
                 }
             }

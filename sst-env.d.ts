@@ -5,6 +5,10 @@
 
 declare module "sst" {
   export interface Resource {
+    "BevyGameFrontend": {
+      "type": "sst.aws.StaticSite"
+      "url": string
+    }
     "BevyTable": {
       "name": string
       "type": "sst.aws.Dynamo"

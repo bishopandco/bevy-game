@@ -10,6 +10,14 @@ export default $config({
     };
   },
   async run() {
+
+    const frontend = new sst.aws.StaticSite("BevyGameFrontend", {
+      build: {
+        command: "cd frontend && npm i && npm run build",
+        output: "frontend/dist",
+      },
+    })
+
     const table = new sst.aws.Dynamo("BevyTable", {
       fields: {
         pk: "string",
@@ -51,7 +59,8 @@ export default $config({
 
     return {
       socketUrl: socket.url,
-      table: table.name
+      table: table.name,
+      frontend: frontend.url
     }
 
   },

@@ -5,7 +5,7 @@ use futures_util::{SinkExt, StreamExt};
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 use rustls::crypto::{ring::default_provider as ring_provider, CryptoProvider};
-
+use tokio_tungstenite::tungstenite::Utf8Bytes;
 use crate::globals::GameParams;
 
 /// Resource holding the Tokio runtime and connection status.
@@ -85,7 +85,7 @@ fn connect_socket(mut client: ResMut<SocketClient>, params: Res<GameParams>) {
 
                 let send_task = tokio::spawn(async move {
                     while let Some(msg) = rx_in.recv().await {
-                        if write.send(Message::Text(msg)).await.is_err() {
+                        if write.send(Message::Text(Utf8Bytes::from(msg))).await.is_err() {
                             break;
                         }
                     }
@@ -94,7 +94,7 @@ fn connect_socket(mut client: ResMut<SocketClient>, params: Res<GameParams>) {
                 let recv_task = tokio::spawn(async move {
                     while let Some(Ok(msg)) = read.next().await {
                         if let Ok(text) = msg.into_text() {
-                            let _ = tx_out.send(text);
+                            let _ = tx_out.send(text.parse().unwrap());
                         }
                     }
                 });
