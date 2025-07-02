@@ -13,6 +13,10 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Dynamo"
     }
+    "SocketBroadcaster": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
     "SocketDemo": {
       "managementEndpoint": string
       "type": "sst.aws.ApiGatewayWebSocket"

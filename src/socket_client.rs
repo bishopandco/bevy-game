@@ -112,7 +112,7 @@ fn connect_socket(mut client: ResMut<SocketClient>, params: Res<GameParams>) {
                 let recv_task = tokio::spawn(async move {
                     while let Some(Ok(msg)) = read.next().await {
                         if let Ok(text) = msg.into_text() {
-                            let _ = tx_out.send(text);
+                            let _ = tx_out.send(text.to_string());
                         }
                     }
                 });

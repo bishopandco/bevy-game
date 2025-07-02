@@ -53,10 +53,15 @@ export default $config({
       },
     });
 
+    const standaloneFunction = new sst.aws.Function("SocketBroadcaster", {
+      handler: "socket/index.sendMessage",
+      link: [socket, table],
+    });
+
     socket.route("$connect", "socket/index.connect");
     socket.route("$disconnect", "socket/index.disconnect");
     // Explicitly handle chat messages on the sendMessage route
-    socket.route("sendMessage", "socket/index.sendMessage");
+    socket.route("sendMessage", standaloneFunction.arn);
 
     return {
       socketUrl: socket.url,
