@@ -55,8 +55,8 @@ export default $config({
 
     socket.route("$connect", "socket/index.connect");
     socket.route("$disconnect", "socket/index.disconnect");
-    // Handle all incoming messages via the default route
-    socket.route("$default", "socket/index.sendMessage");
+    // Explicitly handle chat messages on the sendMessage route
+    socket.route("sendMessage", "socket/index.sendMessage");
 
     return {
       socketUrl: socket.url,

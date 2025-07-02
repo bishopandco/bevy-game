@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy::log::info;
+use serde_json::json;
 use std::sync::{atomic::{AtomicBool, Ordering}, Arc};
 use tokio::runtime::Runtime;
 use futures_util::{SinkExt, StreamExt};
@@ -38,11 +39,22 @@ impl SocketClient {
         self.connected.load(Ordering::SeqCst)
     }
 
-    /// Sends a text message over the socket if connected.
+    /// Sends a chat message over the socket using the `sendMessage` action.
     pub fn send(&self, text: String) {
+        if !self.is_connected() {
+            info!("WebSocket is not open");
+            return;
+        }
+
         if let Some(tx) = &self.sender {
-            info!("Queueing outgoing message: {}", text);
-            let _ = tx.send(text);
+            let payload = json!({
+                "action": "sendMessage",
+                "data": text,
+            })
+            .to_string();
+
+            info!("Queueing outgoing message: {}", payload);
+            let _ = tx.send(payload);
         }
     }
 
