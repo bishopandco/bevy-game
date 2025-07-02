@@ -16,8 +16,6 @@ export const connect = async (
   const connection = event.requestContext.connectionId;
   console.log("🟢 Connection Initiated", connection);
 
-  console.log();
-
   try {
     const result = await ConnectionEntity.put({
       connection: connection,
@@ -65,6 +63,10 @@ export const sendMessage = async (
 ): Promise<APIGatewayProxyResult> => {
   console.log("🟣 Sending message to all connections", event.body);
   console.log("Request context", event.requestContext);
+  console.log("Context", context);
+  console.log(
+    `ConnectionId ${event.requestContext.connectionId} domain ${event.requestContext.domainName} stage ${event.requestContext.stage}`
+  );
 
   const apiGatewayManagementApi = new ApiGatewayManagementApiClient({
     endpoint: `https://${event.requestContext.domainName}/${event.requestContext.stage}`,

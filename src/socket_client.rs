@@ -41,7 +41,7 @@ impl SocketClient {
     /// Sends a text message over the socket if connected.
     pub fn send(&self, text: String) {
         if let Some(tx) = &self.sender {
-            info!("Queueing outgoing message: {text}");
+            info!("Queueing outgoing message: {}", text);
             let _ = tx.send(text);
         }
     }
@@ -51,7 +51,7 @@ impl SocketClient {
         if let Some(rx) = &mut self.receiver {
             match rx.try_recv() {
                 Ok(msg) => {
-                    info!("Incoming message: {msg}");
+                    info!("Incoming message: {}", msg);
                     Some(msg)
                 },
                 Err(_) => None,
@@ -85,7 +85,7 @@ fn connect_socket(mut client: ResMut<SocketClient>, params: Res<GameParams>) {
     client.runtime.spawn(async move {
         match connect_async(&url).await {
             Ok((ws, _)) => {
-                info!("Socket connected to {url}");
+                info!("Socket connected to {}", url);
                 status.store(true, Ordering::SeqCst);
                 let (mut write, mut read) = ws.split();
 
@@ -100,7 +100,7 @@ fn connect_socket(mut client: ResMut<SocketClient>, params: Res<GameParams>) {
                 let recv_task = tokio::spawn(async move {
                     while let Some(Ok(msg)) = read.next().await {
                         if let Ok(text) = msg.into_text() {
-                            let _ = tx_out.send(text.parse().unwrap());
+                            let _ = tx_out.send(text);
                         }
                     }
                 });
