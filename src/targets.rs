@@ -30,6 +30,8 @@ impl Plugin for TargetsPlugin {
     }
 }
 
+const TARGET_HALF_EXTENTS: Vec3 = Vec3::new(0.5, 10.0, 0.5);
+
 fn spawn_target(mut commands: Commands, asset_server: Res<AssetServer>) {
     let scene: Handle<Scene> = asset_server.load("models/targets.glb#Scene0");
     commands
@@ -40,7 +42,7 @@ fn spawn_target(mut commands: Commands, asset_server: Res<AssetServer>) {
             ColliderConstructor::TrimeshFromMesh,
         ))
         .insert(RigidBody::Static)
-        .insert(Target::new(100, Vec3::new(1.0, 1.0, 1.0)));
+        .insert(Target::new(100, TARGET_HALF_EXTENTS));
     info!("spawned target with hp 100");
 }
 
