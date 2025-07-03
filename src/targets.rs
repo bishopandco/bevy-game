@@ -41,6 +41,7 @@ fn spawn_target(mut commands: Commands, asset_server: Res<AssetServer>) {
         ))
         .insert(RigidBody::Static)
         .insert(Target::new(100, Vec3::new(1.0, 18.0, 1.0)));
+    info!("spawned target with hp 100");
 }
 
 const LASER_DAMAGE: i32 = 5;
@@ -53,19 +54,27 @@ fn laser_hit_system(
 ) {
     for (mut laser_tf, mut laser) in &mut lasers {
         for (target_entity, target_tf, mut target) in &mut targets {
+            if target.hp <= 0 {
+                continue;
+            }
+            info!(
+                "checking laser at {:?} against target at {:?}",
+                laser_tf.translation, target_tf.translation
+            );
             let local = laser_tf.translation - target_tf.translation;
             if local.x.abs() < target.half_extents.x
                 && local.y.abs() < target.half_extents.y
                 && local.z.abs() < target.half_extents.z
             {
                 let normal = local.normalize_or_zero();
-                let hit_pos = laser_tf.translation;
+                let hit_pos = laser_tf.translation + normal * 0.1;
                 let new_hp = (target.hp - LASER_DAMAGE).max(0);
+                target.hp = new_hp;
                 if new_hp == 0 {
+                    info!("despawning target {:?}", target_entity);
                     commands.entity(target_entity).despawn();
-                } else {
-                    target.hp = new_hp;
                 }
+                info!("hit target {:?}, new hp {}", target_entity, new_hp);
 
                 let font: Handle<Font> = asset_server.load("fonts/Arial.ttf");
                 commands.spawn((
@@ -80,10 +89,10 @@ fn laser_hit_system(
                     Transform::from_translation(hit_pos),
                     HpText::new(1.0),
                 ));
+                info!("spawned hp text at {:?}", hit_pos);
 
-                laser.velocity =
-                    (laser.velocity - 2.0 * laser.velocity.dot(normal) * normal)
-                        * crate::weapons::LASER_BOUNCE_DECAY;
+                laser.velocity = (laser.velocity - 2.0 * laser.velocity.dot(normal) * normal)
+                    * crate::weapons::LASER_BOUNCE_DECAY;
                 laser_tf.translation = hit_pos;
                 break;
             }
