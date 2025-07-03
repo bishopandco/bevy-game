@@ -98,11 +98,17 @@ fn update_speed(keys: &ButtonInput<KeyCode>, params: &GameParams, plyr: &mut Pla
 }
 
 fn update_yaw(keys: &ButtonInput<KeyCode>, params: &GameParams, plyr: &mut Player, dt: f32) {
+    let mut input = 0.0;
     if keys.pressed(KeyCode::ArrowLeft) {
-        plyr.yaw += params.yaw_rate * dt;
+        input += 1.0;
     }
     if keys.pressed(KeyCode::ArrowRight) {
-        plyr.yaw -= params.yaw_rate * dt;
+        input -= 1.0;
+    }
+
+    if input != 0.0 {
+        let speed_factor = (1.0 - (plyr.speed.abs() / params.max_speed)).clamp(0.2, 1.0);
+        plyr.yaw += input * params.yaw_rate * dt * speed_factor;
     }
 }
 
@@ -126,7 +132,16 @@ fn move_horizontal(
     dt: f32,
 ) {
     let yaw_rot = Quat::from_rotation_y(plyr.yaw);
-    let forward = yaw_rot * Vec3::Z;
+    let ground_n = sample_ground_contact(spatial, entity, tf, plyr)
+        .map(|(n, _)| n)
+        .unwrap_or(Vec3::Y);
+    let orient = Quat::from_rotation_arc(Vec3::Y, ground_n) * yaw_rot;
+    let forward = orient * Vec3::Z;
+
+    // Apply gravity along the slope to influence speed
+    let slope_gravity = -forward.y * params.gravity * dt;
+    plyr.speed = (plyr.speed + slope_gravity).clamp(-params.max_speed, params.max_speed);
+
     let mut remaining = forward * plyr.speed * dt;
     let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
 
