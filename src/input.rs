@@ -16,11 +16,13 @@ const SUBSTEPS: u32 = 4;
 const FALL_RESET_Y: f32 = -100.0;
 const RESPAWN_POS: Vec3 = Vec3::new(0.0, 1.5, 0.0);
 const RESPAWN_YAW: f32 = 0.0;
+const DRONE_VERTICAL_SPEED: f32 = 10.0;
 
 #[derive(Component, Default)]
 pub struct Player {
     pub speed: f32,
     pub vertical_vel: f32,
+    pub vertical_input: f32,
     pub yaw: f32,
     pub half_extents: Vec3,
     pub grounded: bool,
@@ -53,6 +55,7 @@ fn player_input_system(
     for mut plyr in &mut q {
         update_speed(&keys, &params, &mut plyr, dt);
         update_yaw(&keys, &params, &mut plyr, dt);
+        update_vertical_input(&keys, &mut plyr);
     }
 }
 
@@ -102,6 +105,16 @@ fn update_yaw(keys: &ButtonInput<KeyCode>, params: &GameParams, plyr: &mut Playe
     }
     if keys.pressed(KeyCode::ArrowRight) {
         plyr.yaw -= params.yaw_rate * dt;
+    }
+}
+
+fn update_vertical_input(keys: &ButtonInput<KeyCode>, plyr: &mut Player) {
+    if keys.pressed(KeyCode::KeyW) {
+        plyr.vertical_input = 1.0;
+    } else if keys.pressed(KeyCode::KeyS) {
+        plyr.vertical_input = -1.0;
+    } else {
+        plyr.vertical_input = 0.0;
     }
 }
 
@@ -187,7 +200,10 @@ fn move_vertical(
     // re-check ground contact before applying gravity
     apply_ground_snap(spatial, entity, tf, plyr);
 
-    if plyr.grounded {
+    if plyr.vertical_input != 0.0 {
+        plyr.vertical_vel = plyr.vertical_input * DRONE_VERTICAL_SPEED;
+        plyr.grounded = false;
+    } else if plyr.grounded {
         // player was grounded last frame, so don't apply gravity
         plyr.vertical_vel = 0.0;
     } else {
@@ -220,6 +236,9 @@ fn resolve_vertical_collision(
     ) {
         tf.translation.y = hit.point1.y + plyr.half_extents.y + SKIN;
         plyr.grounded = true;
+        if plyr.vertical_vel < 0.0 {
+            plyr.speed *= 0.1;
+        }
         plyr.vertical_vel = 0.0;
     }
 }
@@ -268,6 +287,7 @@ fn fall_reset_system(mut q: Query<(&mut Transform, &mut Player)>) {
             tf.translation = RESPAWN_POS;
             plyr.speed = 0.0;
             plyr.vertical_vel = 0.0;
+            plyr.vertical_input = 0.0;
             plyr.grounded = false;
             plyr.yaw = RESPAWN_YAW;
             plyr.fire_timer = 0.0;

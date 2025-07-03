@@ -50,6 +50,7 @@ fn setup_world(
         .insert(Player {
             speed: 0.0,
             vertical_vel: 0.0,
+            vertical_input: 0.0,
             yaw: 0.0,
             half_extents: Vec3::splat(0.25),
             grounded: false,
