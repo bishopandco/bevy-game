@@ -16,7 +16,7 @@ const RESPAWN_YAW: f32 = 0.0;
 const JUMP_IMPULSE: f32 = 5.0;
 
 // Helper to compute the relative offsets for the four wheels
-fn wheel_offsets(plyr: &Player) -> [Vec3; 4] {
+pub fn wheel_offsets(plyr: &Player) -> [Vec3; 4] {
     let ext = plyr.half_extents;
     [
         Vec3::new(ext.x, -ext.y, ext.z),

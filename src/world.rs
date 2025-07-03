@@ -2,6 +2,7 @@ use crate::input::Player;
 use avian3d::prelude::{Collider, ColliderConstructor, ColliderConstructorHierarchy};
 use avian3d::prelude::{LinearVelocity, RigidBody};
 use bevy::prelude::*;
+use bevy::prelude::shape;
 
 pub struct WorldPlugin;
 
@@ -40,6 +41,22 @@ fn setup_world(
         .insert(Transform::from_xyz(5.0, 10.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y));
 
     let mesh = meshes.add(Cuboid::new(0.25, 0.25, 0.25));
+    let wheel_mesh = meshes.add(Mesh::from(shape::Icosphere {
+        radius: 0.05,
+        subdivisions: 4,
+    }));
+    let wheel_mat = materials.add(Color::srgb(0.2, 0.2, 0.2));
+    let player = Player {
+        speed: 0.0,
+        vertical_vel: 0.0,
+        vertical_input: 0.0,
+        yaw: 0.0,
+        half_extents: Vec3::splat(0.25),
+        grounded: false,
+        fire_timer: 0.0,
+        weapon_energy: 1.0,
+    };
+    let offsets = crate::input::wheel_offsets(&player);
     commands
         .spawn(Mesh3d(mesh))
         .insert(MeshMaterial3d(materials.add(Color::srgb(0.2, 0.8, 0.2))))
@@ -47,14 +64,13 @@ fn setup_world(
         .insert(RigidBody::Kinematic)
         .insert(Collider::cuboid(0.25, 0.25, 0.25))
         .insert(LinearVelocity::ZERO)
-        .insert(Player {
-            speed: 0.0,
-            vertical_vel: 0.0,
-            vertical_input: 0.0,
-            yaw: 0.0,
-            half_extents: Vec3::splat(0.25),
-            grounded: false,
-            fire_timer: 0.0,
-            weapon_energy: 1.0,
+        .insert(player)
+        .with_children(|parent| {
+            for offset in offsets {
+                parent
+                    .spawn(Mesh3d(wheel_mesh.clone()))
+                    .insert(MeshMaterial3d(wheel_mat.clone()))
+                    .insert(Transform::from_translation(offset));
+            }
         });
 }
