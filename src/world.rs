@@ -1,4 +1,4 @@
-use crate::input::{Player, Wheel};
+use crate::input::Player;
 use avian3d::prelude::{Collider, ColliderConstructor, ColliderConstructorHierarchy};
 use avian3d::prelude::{LinearVelocity, RigidBody};
 use bevy::prelude::*;
