@@ -72,7 +72,7 @@ fn laser_hit_system(
         if let Some(hit) = spatial.cast_ray(start, dir, dist, true, &filter) {
             if let Ok((target_entity, mut target)) = targets.get_mut(hit.entity) {
                 let normal = hit.normal;
-                let hit_pos = hit.point;
+                let hit_pos = start + dir.as_vec3() * hit.distance;
                 let new_hp = (target.hp - LASER_DAMAGE).max(0);
                 target.hp = new_hp;
                 if new_hp == 0 {
