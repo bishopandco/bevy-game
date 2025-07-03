@@ -5,6 +5,7 @@ use bevy::{
     log::info,
     prelude::*,
 };
+use rand::random;
 
 const STEP_HEIGHT: f32 = 0.25;
 const MAX_SLOPE_COS: f32 = 0.707;
@@ -16,13 +17,17 @@ const SUBSTEPS: u32 = 4;
 const FALL_RESET_Y: f32 = -100.0;
 const RESPAWN_POS: Vec3 = Vec3::new(0.0, 1.5, 0.0);
 const RESPAWN_YAW: f32 = 0.0;
-const DRONE_VERTICAL_SPEED: f32 = 10.0;
+const DRONE_ASCEND_RATE: f32 = 5.0;
+const DRONE_ALT_SPRING: f32 = 12.0;
+const DRONE_ALT_DAMPING: f32 = 4.0;
+const DRONE_TURBULENCE: f32 = 0.3;
 
 #[derive(Component, Default)]
 pub struct Player {
     pub speed: f32,
     pub vertical_vel: f32,
     pub vertical_input: f32,
+    pub desired_altitude: f32,
     pub yaw: f32,
     pub half_extents: Vec3,
     pub grounded: bool,
@@ -201,11 +206,15 @@ fn move_vertical(
     apply_ground_snap(spatial, entity, tf, plyr);
 
     if plyr.vertical_input != 0.0 {
-        plyr.vertical_vel = plyr.vertical_input * DRONE_VERTICAL_SPEED;
+        plyr.desired_altitude += plyr.vertical_input * DRONE_ASCEND_RATE * dt;
         plyr.grounded = false;
-    } else {
-        plyr.vertical_vel = 0.0;
     }
+
+    let error = plyr.desired_altitude - tf.translation.y;
+    let accel = error * DRONE_ALT_SPRING - plyr.vertical_vel * DRONE_ALT_DAMPING;
+    plyr.vertical_vel += accel * dt;
+    plyr.vertical_vel += (rand::random::<f32>() - 0.5) * 2.0 * DRONE_TURBULENCE;
+
     tf.translation.y += plyr.vertical_vel * dt;
     resolve_vertical_collision(spatial, entity, col, tf, plyr);
 }
@@ -236,6 +245,7 @@ fn resolve_vertical_collision(
             plyr.speed *= 0.1;
         }
         plyr.vertical_vel = 0.0;
+        plyr.desired_altitude = tf.translation.y;
     }
 }
 
@@ -284,6 +294,7 @@ fn fall_reset_system(mut q: Query<(&mut Transform, &mut Player)>) {
             plyr.speed = 0.0;
             plyr.vertical_vel = 0.0;
             plyr.vertical_input = 0.0;
+            plyr.desired_altitude = RESPAWN_POS.y;
             plyr.grounded = false;
             plyr.yaw = RESPAWN_YAW;
             plyr.fire_timer = 0.0;
