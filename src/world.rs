@@ -61,5 +61,49 @@ fn setup_world(
                     .insert(MeshMaterial3d(wheel_mat.clone()))
                     .insert(Transform::from_translation(offset));
             }
+
+            // Headlights - slightly yellow directional lights
+            let head_color = Color::rgb(1.0, 1.0, 0.8);
+            let front_z = 0.25 + 0.05;
+            parent
+                .spawn(DirectionalLight {
+                    color: head_color,
+                    illuminance: 2000.0,
+                    ..default()
+                })
+                .insert(
+                    Transform::from_translation(Vec3::new(0.15, 0.0, front_z))
+                        .looking_at(Vec3::new(0.15, 0.0, front_z + 1.0), Vec3::Y),
+                );
+            parent
+                .spawn(DirectionalLight {
+                    color: head_color,
+                    illuminance: 2000.0,
+                    ..default()
+                })
+                .insert(
+                    Transform::from_translation(Vec3::new(-0.15, 0.0, front_z))
+                        .looking_at(Vec3::new(-0.15, 0.0, front_z + 1.0), Vec3::Y),
+                );
+
+            // Tail lights - red point lights
+            let back_z = -0.25 - 0.05;
+            let tail_color = Color::rgb(1.0, 0.0, 0.0);
+            parent
+                .spawn(PointLight {
+                    intensity: 100.0,
+                    range: 5.0,
+                    color: tail_color,
+                    ..default()
+                })
+                .insert(Transform::from_translation(Vec3::new(0.15, 0.0, back_z)));
+            parent
+                .spawn(PointLight {
+                    intensity: 100.0,
+                    range: 5.0,
+                    color: tail_color,
+                    ..default()
+                })
+                .insert(Transform::from_translation(Vec3::new(-0.15, 0.0, back_z)));
         });
 }
