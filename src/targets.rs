@@ -36,7 +36,7 @@ fn spawn_target(mut commands: Commands, asset_server: Res<AssetServer>) {
     let scene: Handle<Scene> = asset_server.load("models/targets.glb#Scene0");
     commands
         .spawn(SceneRoot(scene))
-        .insert(Transform::from_xyz(0.0, 0.0, 0.0))
+        .insert(Transform::from_xyz(0.0, 0.0, 5.0))
         .insert(GlobalTransform::default())
         .insert(ColliderConstructorHierarchy::new(
             ColliderConstructor::TrimeshFromMesh,
@@ -119,8 +119,8 @@ fn segment_intersects_aabb(
         (start.y, dir.y, center.y - half_extents.y, center.y + half_extents.y),
         (start.z, dir.z, center.z - half_extents.z, center.z + half_extents.z),
     ];
-    let mut tmin = 0.0;
-    let mut tmax = 1.0;
+    let mut tmin: f32 = 0.0;
+    let mut tmax: f32 = 1.0;
     for (s, d, min, max) in axes {
         if d.abs() < f32::EPSILON {
             if s < min || s > max {
