@@ -13,6 +13,7 @@ pub struct GameParams {
     pub cam_height: f32,
     pub cam_lerp: f32,
     pub cam_rot_lerp: f32,
+    pub ground_align_lerp: f32,
     pub look_ahead: f32,
     pub mini_map_size: f32,
     pub mini_map_height: f32,
@@ -40,6 +41,7 @@ impl Default for GameParams {
             cam_height: 1.9,
             cam_lerp: 0.65,
             cam_rot_lerp: 0.45,
+            ground_align_lerp: 0.1,
             look_ahead: 2.0,
             mini_map_size: 300.0,
             mini_map_height: 400.0,
@@ -49,7 +51,7 @@ impl Default for GameParams {
             collision_damping: 0.4,
             slope_damping: 0.2,
             slope_ease: 0.5,
-            bounce_factor: 0.05,
+            bounce_factor: 0.02,
             socket_url: "wss://535rf3b3kk.execute-api.us-east-1.amazonaws.com/$default".to_string(),
         }
     }

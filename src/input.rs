@@ -78,11 +78,12 @@ fn player_move_system(
 
 fn player_orientation_system(
     spatial: SpatialQuery,
+    params: Res<GameParams>,
     mut q: Query<(Entity, &mut Transform, &mut Player)>,
 ) {
     for (entity, mut tf, mut plyr) in &mut q {
         apply_ground_snap(&spatial, entity, &mut tf, &mut plyr);
-        orient_to_ground(&spatial, entity, &mut tf, &plyr);
+        orient_to_ground(&spatial, &params, entity, &mut tf, &plyr);
     }
 }
 
@@ -256,7 +257,13 @@ fn apply_ground_snap(
     plyr.grounded = grounded_now;
 }
 
-fn orient_to_ground(spatial: &SpatialQuery, entity: Entity, tf: &mut Transform, plyr: &Player) {
+fn orient_to_ground(
+    spatial: &SpatialQuery,
+    params: &GameParams,
+    entity: Entity,
+    tf: &mut Transform,
+    plyr: &Player,
+) {
     let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
     let ground_n = spatial
         .cast_ray(
@@ -270,8 +277,7 @@ fn orient_to_ground(spatial: &SpatialQuery, entity: Entity, tf: &mut Transform, 
         .unwrap_or(Vec3::Y);
     let yaw_rot = Quat::from_rotation_y(plyr.yaw);
     let target = Quat::from_rotation_arc(Vec3::Y, ground_n) * yaw_rot;
-    const ROT_SMOOTH: f32 = 0.2;
-    tf.rotation = tf.rotation.slerp(target, ROT_SMOOTH);
+    tf.rotation = tf.rotation.slerp(target, params.ground_align_lerp);
 }
 
 fn fall_reset_system(mut q: Query<(&mut Transform, &mut Player)>) {
