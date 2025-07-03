@@ -82,7 +82,6 @@ fn debug_ui(
             ui.heading(format!("Player {i}"));
             ui.label(format!("speed        : {:>6.2}", p.speed));
             ui.label(format!("vertical_vel : {:>6.2}", p.vertical_vel));
-            ui.label(format!("desired_alt  : {:>6.2}", p.desired_altitude));
             ui.label(format!("yaw (rad)    : {:>6.2}", p.yaw));
             ui.label(format!("weapon_energy: {:>6.2}", p.weapon_energy));
             ui.label(format!("pos          : {:.1?}", tf.translation));
@@ -104,7 +103,6 @@ fn handle_respawn(
         plyr.speed = 0.0;
         plyr.vertical_vel = 0.0;
         plyr.vertical_input = 0.0;
-        plyr.desired_altitude = 3.0;
         plyr.fire_timer = 0.0;
         plyr.weapon_energy = 1.0;
     }
