@@ -2617,6 +2617,7 @@ dependencies = [
  "bevy_egui",
  "bevy_svg",
  "futures-util",
+ "rand 0.8.5",
  "rustls",
  "serde",
  "serde_json",

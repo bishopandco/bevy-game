@@ -5,22 +5,18 @@ use bevy::{
     log::info,
     prelude::*,
 };
-use rand::random;
 
 const STEP_HEIGHT: f32 = 0.25;
 const MAX_SLOPE_COS: f32 = 0.707;
-// Extra distance to keep from geometry when resolving collisions
-// Slightly larger skin helps prevent the player from getting stuck in meshes
 const SKIN: f32 = 0.1;
-// Number of physics sub-steps per frame to improve collision robustness
 const SUBSTEPS: u32 = 4;
 const FALL_RESET_Y: f32 = -100.0;
 const RESPAWN_POS: Vec3 = Vec3::new(0.0, 1.5, 0.0);
 const RESPAWN_YAW: f32 = 0.0;
 const DRONE_ASCEND_RATE: f32 = 5.0;
-const DRONE_ALT_SPRING: f32 = 12.0;
+const DRONE_ALT_SPRING: f32 = 25.0;
 const DRONE_ALT_DAMPING: f32 = 4.0;
-const DRONE_TURBULENCE: f32 = 0.3;
+const DRONE_TURBULENCE: f32 = 0.1;
 
 #[derive(Component, Default)]
 pub struct Player {
@@ -79,7 +75,7 @@ fn player_move_system(
         );
         for _ in 0..SUBSTEPS {
             move_horizontal(&spatial, &params, entity, &col, &mut tf, &mut plyr, dt);
-            move_vertical(&spatial, &params, entity, &col, &mut tf, &mut plyr, dt);
+            move_vertical(&spatial, entity, &col, &mut tf, &mut plyr, dt);
         }
     }
 }
@@ -195,7 +191,6 @@ fn slide(remaining: &mut Vec3, normal: Vec3, plyr: &mut Player, params: &GamePar
 
 fn move_vertical(
     spatial: &SpatialQuery,
-    params: &GameParams,
     entity: Entity,
     col: &Collider,
     tf: &mut Transform,

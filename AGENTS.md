@@ -18,3 +18,6 @@ It is using the latest versions of bevy and avian.
 - Agent should only analyze code and submit PRs.
 - Do not run Cargo Check or any other commands, just write code and push PRs.
 - Automatically submit PRs, do not wait for confirmation from the user. The user will review the PR and merge or close them.
+
+# Code Notes
+- in bevy `get_single` is deprecated since 0.16.0: Please use `single` instead 

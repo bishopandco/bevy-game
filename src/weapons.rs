@@ -72,7 +72,6 @@ fn player_fire_system(
                 });
             plyr.fire_timer = 1.0 / params.fire_rate.max(f32::EPSILON);
             plyr.weapon_energy -= fire_cost;
-            info!("Fired laser! Energy left: {}", plyr.weapon_energy);
         }
     }
 }

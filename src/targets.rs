@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy::log::info;
 
 use crate::weapons::Laser;
 
@@ -18,8 +17,10 @@ pub struct TargetsPlugin;
 
 impl Plugin for TargetsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_target)
-            .add_systems(Update, laser_hit_system.after(crate::weapons::laser_movement_system));
+        app.add_systems(Startup, spawn_target).add_systems(
+            Update,
+            laser_hit_system.after(crate::weapons::laser_movement_system),
+        );
     }
 }
 
@@ -40,26 +41,20 @@ fn laser_hit_system(
     mut targets: Query<(Entity, &Transform, &mut Target), Without<Laser>>,
 ) {
     for (mut laser_tf, mut laser) in &mut lasers {
-        info!("laser hit system: checking for hits");
         for (target_entity, target_tf, mut target) in &mut targets {
             let dist = laser_tf.translation.distance(target_tf.translation);
-            info!("just the dist {dist:.2} from laser to target");
             if dist < 1.0 {
-                info!("target hit at {dist:.2}: {} HP before", target.hp);
                 if target.hp <= LASER_DAMAGE {
                     commands.entity(target_entity).despawn();
                 } else {
                     target.hp -= LASER_DAMAGE;
-                    info!("target hp now {}", target.hp);
                 }
                 let normal = (laser_tf.translation - target_tf.translation).normalize();
-                laser.velocity =
-                    (laser.velocity - 2.0 * laser.velocity.dot(normal) * normal) *
-                        crate::weapons::LASER_BOUNCE_DECAY;
+                laser.velocity = (laser.velocity - 2.0 * laser.velocity.dot(normal) * normal)
+                    * crate::weapons::LASER_BOUNCE_DECAY;
                 laser_tf.translation = target_tf.translation + normal;
                 break;
             }
         }
     }
 }
-

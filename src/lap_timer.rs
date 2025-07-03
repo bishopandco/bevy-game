@@ -31,9 +31,9 @@ fn lap_timer_system(
     start_q: Query<&Transform, With<StartGoal>>,
     finish_q: Query<&Transform, With<FinishGoal>>,
 ) {
-    let Ok(player_tf) = player_q.get_single() else { return; };
-    let Ok(start_tf) = start_q.get_single() else { return; };
-    let Ok(finish_tf) = finish_q.get_single() else { return; };
+    let Ok(player_tf) = player_q.single() else { return; };
+    let Ok(start_tf) = start_q.single() else { return; };
+    let Ok(finish_tf) = finish_q.single() else { return; };
 
     let player_pos = player_tf.translation;
 
