@@ -40,7 +40,7 @@ fn spawn_target(mut commands: Commands, asset_server: Res<AssetServer>) {
             ColliderConstructor::TrimeshFromMesh,
         ))
         .insert(RigidBody::Static)
-        .insert(Target::new(100, Vec3::new(1.0, 18.0, 1.0)));
+        .insert(Target::new(100, Vec3::new(1.0, 1.0, 1.0)));
     info!("spawned target with hp 100");
 }
 
@@ -62,7 +62,7 @@ fn laser_hit_system(
                 laser_tf.translation, target_tf.translation
             );
             let start = laser.prev_position;
-            let end = laser_tf.translation;
+            let end = laser.projected_position;
             if let Some(hit_pos) = segment_intersects_aabb(
                 start,
                 end,
@@ -79,6 +79,7 @@ fn laser_hit_system(
                 info!("hit target {:?}, new hp {}", target_entity, new_hp);
 
                 let font: Handle<Font> = asset_server.load("fonts/Arial.ttf");
+                let text_pos = hit_pos + normal * 0.1;
                 commands.spawn((
                     Text2d::new(format!("{} HP", new_hp)),
                     TextFont {
@@ -88,10 +89,10 @@ fn laser_hit_system(
                     },
                     TextColor::WHITE,
                     TextLayout::default(),
-                    Transform::from_translation(hit_pos),
+                    Transform::from_translation(text_pos),
                     HpText::new(1.0),
                 ));
-                info!("spawned hp text at {:?}", hit_pos);
+                info!("spawned hp text at {:?}", text_pos);
 
                 laser.velocity =
                     (laser.velocity - 2.0 * laser.velocity.dot(normal) * normal)

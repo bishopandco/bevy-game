@@ -18,6 +18,7 @@ impl Plugin for WeaponPlugin {
 pub struct Laser {
     pub(crate) velocity: Vec3,
     pub(crate) prev_position: Vec3,
+    pub(crate) projected_position: Vec3,
     life: f32,
     material: Handle<StandardMaterial>,
 }
@@ -69,6 +70,7 @@ fn player_fire_system(
                 .insert(Laser {
                     velocity: forward * LASER_SPEED,
                     prev_position: pos,
+                    projected_position: pos,
                     life: LASER_LIFETIME,
                     material,
                 });
@@ -89,6 +91,7 @@ pub fn laser_movement_system(
     let col = Collider::cuboid(0.025, 0.025, 0.15);
     for (e, mut tf, mut laser, mut light) in &mut q {
         let start_pos = tf.translation;
+        laser.projected_position = tf.translation + laser.velocity * dt;
         let mut remaining = laser.velocity * dt;
         let filter = SpatialQueryFilter::default().with_excluded_entities([e]);
         for _ in 0..2 {
