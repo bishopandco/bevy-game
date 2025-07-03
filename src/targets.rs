@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use crate::weapons::Laser;
+use crate::hp_text::{HpText, HpTextPlugin};
 
 #[derive(Component)]
 pub struct Target {
@@ -17,10 +18,12 @@ pub struct TargetsPlugin;
 
 impl Plugin for TargetsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_target).add_systems(
-            Update,
-            laser_hit_system.after(crate::weapons::laser_movement_system),
-        );
+        app.add_plugins(HpTextPlugin)
+            .add_systems(Startup, spawn_target)
+            .add_systems(
+                Update,
+                laser_hit_system.after(crate::weapons::laser_movement_system),
+            );
     }
 }
 
@@ -39,20 +42,40 @@ fn laser_hit_system(
     mut commands: Commands,
     mut lasers: Query<(&mut Transform, &mut Laser), Without<Target>>,
     mut targets: Query<(Entity, &Transform, &mut Target), Without<Laser>>,
+    asset_server: Res<AssetServer>,
 ) {
     for (mut laser_tf, mut laser) in &mut lasers {
         for (target_entity, target_tf, mut target) in &mut targets {
             let dist = laser_tf.translation.distance(target_tf.translation);
             if dist < 1.0 {
-                if target.hp <= LASER_DAMAGE {
+                let normal = (laser_tf.translation - target_tf.translation).normalize();
+                let hit_pos = target_tf.translation + normal;
+                let new_hp = (target.hp - LASER_DAMAGE).max(0);
+                if new_hp == 0 {
                     commands.entity(target_entity).despawn();
                 } else {
-                    target.hp -= LASER_DAMAGE;
+                    target.hp = new_hp;
                 }
-                let normal = (laser_tf.translation - target_tf.translation).normalize();
-                laser.velocity = (laser.velocity - 2.0 * laser.velocity.dot(normal) * normal)
-                    * crate::weapons::LASER_BOUNCE_DECAY;
-                laser_tf.translation = target_tf.translation + normal;
+
+                let font: Handle<Font> = asset_server.load("fonts/FiraSans-Bold.ttf");
+                commands.spawn(Text3dBundle {
+                    text: Text::from_section(
+                        format!("{} HP", new_hp),
+                        TextStyle {
+                            font,
+                            font_size: 20.0,
+                            color: Color::WHITE,
+                        },
+                    ),
+                    transform: Transform::from_translation(hit_pos),
+                    ..default()
+                })
+                .insert(HpText::new(1.0));
+
+                laser.velocity =
+                    (laser.velocity - 2.0 * laser.velocity.dot(normal) * normal)
+                        * crate::weapons::LASER_BOUNCE_DECAY;
+                laser_tf.translation = hit_pos;
                 break;
             }
         }

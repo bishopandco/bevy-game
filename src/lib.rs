@@ -13,3 +13,4 @@ pub mod goals;
 pub mod lap_timer;
 pub mod socket_client;
 pub mod chat;
+pub mod hp_text;
