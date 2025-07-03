@@ -2,7 +2,6 @@ use crate::input::Player;
 use avian3d::prelude::{Collider, ColliderConstructor, ColliderConstructorHierarchy};
 use avian3d::prelude::{LinearVelocity, RigidBody};
 use bevy::prelude::*;
-use bevy::prelude::shape;
 
 pub struct WorldPlugin;
 
@@ -29,22 +28,12 @@ fn setup_world(
         .insert(RigidBody::Static);
 
     commands.insert_resource(AmbientLight {
-        brightness: 0.5,
+        brightness: 1.0,
         ..default()
     });
-    commands
-        .spawn(DirectionalLight {
-            illuminance: 3_000.0,
-            shadows_enabled: true,
-            ..default()
-        })
-        .insert(Transform::from_xyz(5.0, 10.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y));
 
     let mesh = meshes.add(Cuboid::new(0.25, 0.25, 0.25));
-    let wheel_mesh = meshes.add(Mesh::from(shape::Icosphere {
-        radius: 0.05,
-        subdivisions: 4,
-    }));
+    let wheel_mesh = meshes.add(Cuboid::new(0.1, 0.1, 0.1));
     let wheel_mat = materials.add(Color::srgb(0.2, 0.2, 0.2));
     let player = Player {
         speed: 0.0,
