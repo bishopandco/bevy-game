@@ -255,7 +255,11 @@ fn move_vertical(
         plyr.grounded = false;
     }
 
-    plyr.vertical_vel -= params.gravity * dt;
+    if !plyr.grounded {
+        plyr.vertical_vel -= params.gravity * dt;
+    } else {
+        plyr.vertical_vel = 0.0;
+    }
     tf.translation.y += plyr.vertical_vel * dt;
     resolve_vertical_collision(spatial, entity, col, tf, plyr, params);
 }
