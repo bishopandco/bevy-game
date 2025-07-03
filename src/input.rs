@@ -203,12 +203,8 @@ fn move_vertical(
     if plyr.vertical_input != 0.0 {
         plyr.vertical_vel = plyr.vertical_input * DRONE_VERTICAL_SPEED;
         plyr.grounded = false;
-    } else if plyr.grounded {
-        // player was grounded last frame, so don't apply gravity
-        plyr.vertical_vel = 0.0;
     } else {
-        // apply gravity when falling
-        plyr.vertical_vel -= params.gravity * dt;
+        plyr.vertical_vel = 0.0;
     }
     tf.translation.y += plyr.vertical_vel * dt;
     resolve_vertical_collision(spatial, entity, col, tf, plyr);
