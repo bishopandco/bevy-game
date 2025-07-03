@@ -50,7 +50,7 @@ fn player_fire_system(
                 continue;
             }
             let forward = tf.rotation * Vec3::Z;
-            let pos = tf.translation + forward * (plyr.half_extents.z + 0.6);
+            let pos = tf.translation + forward * (plyr.half_extents.z + 1.0);
             let mesh = meshes.add(Cuboid::new(0.05, 0.05, 0.3));
             let material = materials.add(StandardMaterial {
                 base_color: Color::srgb(1.0, 0.0, 0.0),

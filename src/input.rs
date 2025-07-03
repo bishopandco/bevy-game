@@ -14,6 +14,8 @@ const FALL_RESET_Y: f32 = -100.0;
 const RESPAWN_POS: Vec3 = Vec3::new(0.0, 1.5, 0.0);
 const RESPAWN_YAW: f32 = 0.0;
 const JUMP_IMPULSE: f32 = 5.0;
+const LAUNCH_SPEED: f32 = 20.0;
+const DRIFT_FACTOR: f32 = 0.3;
 
 // Helper to compute the relative offsets for the four wheels
 pub fn wheel_offsets(plyr: &Player) -> [Vec3; 4] {
@@ -57,10 +59,16 @@ pub struct Player {
     pub vertical_vel: f32,
     pub vertical_input: f32,
     pub yaw: f32,
+    pub prev_yaw: f32,
     pub half_extents: Vec3,
     pub grounded: bool,
     pub fire_timer: f32,
     pub weapon_energy: f32,
+}
+
+#[derive(Component)]
+pub struct Wheel {
+    pub offset: Vec3,
 }
 
 pub struct PlayerControlPlugin;
@@ -73,6 +81,7 @@ impl Plugin for PlayerControlPlugin {
                 player_move_system.after(player_input_system),
                 fall_reset_system,
                 player_orientation_system.after(player_move_system),
+                wheel_suspension_system.after(player_orientation_system),
             ),
         );
     }
@@ -118,7 +127,9 @@ fn player_orientation_system(
 ) {
     for (entity, mut tf, mut plyr) in &mut q {
         apply_ground_snap(&spatial, entity, &mut tf, &mut plyr);
-        orient_to_ground(&spatial, entity, &mut tf, &plyr);
+        if plyr.grounded {
+            orient_to_ground(&spatial, entity, &mut tf, &plyr);
+        }
     }
 }
 
@@ -162,7 +173,10 @@ fn move_horizontal(
 ) {
     let yaw_rot = Quat::from_rotation_y(plyr.yaw);
     let forward = yaw_rot * Vec3::Z;
-    let mut remaining = forward * plyr.speed * dt;
+    let delta_yaw = plyr.yaw - plyr.prev_yaw;
+    plyr.prev_yaw = plyr.yaw;
+    let side = yaw_rot * Vec3::X * delta_yaw * DRIFT_FACTOR * plyr.speed.abs();
+    let mut remaining = (forward * plyr.speed + side) * dt;
     let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
 
     for _ in 0..3 {
@@ -280,6 +294,10 @@ fn apply_ground_snap(
     tf: &mut Transform,
     plyr: &mut Player,
 ) {
+    if plyr.speed.abs() > LAUNCH_SPEED {
+        plyr.grounded = false;
+        return;
+    }
     let hits = wheel_ground_hits(spatial, entity, tf, plyr);
     if hits.is_empty() {
         plyr.grounded = false;
@@ -304,6 +322,30 @@ fn orient_to_ground(spatial: &SpatialQuery, entity: Entity, tf: &mut Transform, 
     let target = Quat::from_rotation_arc(Vec3::Y, ground_n) * yaw_rot;
     const ROT_SMOOTH: f32 = 0.2;
     tf.rotation = tf.rotation.slerp(target, ROT_SMOOTH);
+}
+
+fn wheel_suspension_system(
+    spatial: SpatialQuery,
+    player_q: Query<(&Transform, &Player)>,
+    mut wheels: Query<(&Parent, &mut Transform, &Wheel)>,
+) {
+    for (parent, mut tf, wheel) in &mut wheels {
+        if let Ok((player_tf, _)) = player_q.get(parent.get()) {
+            let world_pos = player_tf.translation + player_tf.rotation * wheel.offset;
+            let filter = SpatialQueryFilter::default().with_excluded_entities([parent.get()]);
+            if let Some(hit) = spatial.cast_ray(
+                world_pos,
+                Dir3::NEG_Y,
+                STEP_HEIGHT,
+                false,
+                &filter,
+            ) {
+                tf.translation = wheel.offset + Vec3::Y * (-hit.distance + STEP_HEIGHT);
+            } else {
+                tf.translation = wheel.offset - Vec3::Y * STEP_HEIGHT;
+            }
+        }
+    }
 }
 
 fn fall_reset_system(mut q: Query<(&mut Transform, &mut Player)>) {
