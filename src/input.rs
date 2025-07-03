@@ -17,6 +17,7 @@ const RESPAWN_YAW: f32 = 0.0;
 const JUMP_IMPULSE: f32 = 5.0;
 const LAUNCH_SPEED: f32 = 20.0;
 const DRIFT_FACTOR: f32 = 0.3;
+const SUSPENSION_SMOOTH: f32 = 0.5;
 
 // Helper to compute the relative offsets for the four wheels
 pub fn wheel_offsets(plyr: &Player) -> [Vec3; 4] {
@@ -327,24 +328,25 @@ fn orient_to_ground(spatial: &SpatialQuery, entity: Entity, tf: &mut Transform, 
 
 fn wheel_suspension_system(
     spatial: SpatialQuery,
-    player_q: Query<(&Transform, &Player)>,
-    mut wheels: Query<(&ChildOf, &mut Transform, &Wheel)>,
+    player_q: Query<(&Transform, &Player), Without<Wheel>>,
+    mut wheels: Query<(&ChildOf, &mut Transform, &Wheel), Without<Player>>,
 ) {
     for (child_of, mut tf, wheel) in &mut wheels {
         if let Ok((player_tf, _)) = player_q.get(child_of.parent()) {
             let world_pos = player_tf.translation + player_tf.rotation.mul_vec3(wheel.offset);
             let filter = SpatialQueryFilter::default().with_excluded_entities([child_of.parent()]);
-            if let Some(hit) = spatial.cast_ray(
+            let target = if let Some(hit) = spatial.cast_ray(
                 world_pos,
                 Dir3::NEG_Y,
                 STEP_HEIGHT,
                 false,
                 &filter,
             ) {
-                tf.translation = wheel.offset + Vec3::Y * (-hit.distance + STEP_HEIGHT);
+                wheel.offset + Vec3::Y * (-hit.distance + STEP_HEIGHT)
             } else {
-                tf.translation = wheel.offset - Vec3::Y * STEP_HEIGHT;
-            }
+                wheel.offset - Vec3::Y * STEP_HEIGHT
+            };
+            tf.translation = tf.translation.lerp(target, SUSPENSION_SMOOTH);
         }
     }
 }
