@@ -267,7 +267,7 @@ fn sample_ground_contact(
             &filter,
         ) {
             normal += hit.normal;
-            height += hit.point1.y;
+            height += world.y - hit.distance;
             count += 1;
         }
     }
