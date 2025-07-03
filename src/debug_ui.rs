@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::input::{keyboard::KeyCode, ButtonInput};
 use bevy_egui::{egui, EguiContextPass, EguiContexts, EguiPlugin};
 
 use crate::globals::GameParams;
@@ -13,9 +14,21 @@ impl Plugin for DebugUiPlugin {
     fn build(&self, app: &mut App) {
         // Only add once in your whole app; drop this if EguiPlugin is in main.rs already.
         app.add_plugins(EguiPlugin::default())
+            .insert_resource(DebugUiState::default())
             .add_event::<RespawnEvent>()
             .add_systems(EguiContextPass, debug_ui)
-            .add_systems(Update, handle_respawn);
+            .add_systems(Update, (handle_respawn, toggle_debug_ui));
+    }
+}
+
+#[derive(Resource)]
+pub struct DebugUiState {
+    pub visible: bool,
+}
+
+impl Default for DebugUiState {
+    fn default() -> Self {
+        Self { visible: true }
     }
 }
 
@@ -25,7 +38,11 @@ fn debug_ui(
     players: Query<(&Player, &Transform)>,
     time: Res<Time>,
     mut respawn_writer: EventWriter<RespawnEvent>,
+    state: Res<DebugUiState>,
 ) {
+    if !state.visible {
+        return;
+    }
     let ctx = ctxs.ctx_mut();
     egui::Window::new("GameParams").show(ctx, |ui| {
         ui.label(format!("FPS: {:.0}", 1.0 / time.delta_secs()));
@@ -90,5 +107,14 @@ fn handle_respawn(
         plyr.desired_altitude = 3.0;
         plyr.fire_timer = 0.0;
         plyr.weapon_energy = 1.0;
+    }
+}
+
+fn toggle_debug_ui(
+    keys: Res<ButtonInput<KeyCode>>,
+    mut state: ResMut<DebugUiState>,
+) {
+    if keys.just_pressed(KeyCode::Escape) {
+        state.visible = !state.visible;
     }
 }
