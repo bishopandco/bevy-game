@@ -238,23 +238,58 @@ fn resolve_vertical_collision(
     }
 }
 
+fn sample_ground_contact(
+    spatial: &SpatialQuery,
+    entity: Entity,
+    tf: &Transform,
+    plyr: &Player,
+) -> Option<(Vec3, f32)> {
+    let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
+    let yaw_rot = Quat::from_rotation_y(plyr.yaw);
+    let offsets = [
+        Vec3::new(plyr.half_extents.x, 0.0, plyr.half_extents.z),
+        Vec3::new(-plyr.half_extents.x, 0.0, plyr.half_extents.z),
+        Vec3::new(plyr.half_extents.x, 0.0, -plyr.half_extents.z),
+        Vec3::new(-plyr.half_extents.x, 0.0, -plyr.half_extents.z),
+    ];
+
+    let mut normal = Vec3::ZERO;
+    let mut height = 0.0;
+    let mut count = 0;
+
+    for local in offsets {
+        let world = tf.translation + yaw_rot * local;
+        if let Some(hit) = spatial.cast_ray(
+            world,
+            Dir3::NEG_Y,
+            plyr.half_extents.y + STEP_HEIGHT + SKIN,
+            false,
+            &filter,
+        ) {
+            normal += hit.normal;
+            height += hit.point1.y;
+            count += 1;
+        }
+    }
+
+    (count > 0).then(|| (normal / count as f32, height / count as f32))
+}
+
 fn apply_ground_snap(
     spatial: &SpatialQuery,
     entity: Entity,
     tf: &mut Transform,
     plyr: &mut Player,
 ) {
-    let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
-    let grounded_now = spatial
-        .cast_ray(
-            tf.translation,
-            Dir3::NEG_Y,
-            plyr.half_extents.y + STEP_HEIGHT + SKIN,
-            false,
-            &filter,
-        )
-        .is_some();
-    plyr.grounded = grounded_now;
+    if let Some((_, height)) = sample_ground_contact(spatial, entity, tf, plyr) {
+        let dist = tf.translation.y - height - plyr.half_extents.y;
+        if dist <= STEP_HEIGHT + SKIN {
+            tf.translation.y = height + plyr.half_extents.y;
+            plyr.grounded = true;
+            return;
+        }
+    }
+    plyr.grounded = false;
 }
 
 fn orient_to_ground(
@@ -264,17 +299,10 @@ fn orient_to_ground(
     tf: &mut Transform,
     plyr: &Player,
 ) {
-    let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
-    let ground_n = spatial
-        .cast_ray(
-            tf.translation,
-            Dir3::NEG_Y,
-            plyr.half_extents.y + STEP_HEIGHT + SKIN,
-            false,
-            &filter,
-        )
-        .map(|h| h.normal)
-        .unwrap_or(Vec3::Y);
+    let ground_n = sample_ground_contact(spatial, entity, tf, plyr)
+        .map(|(n, _)| n)
+        .unwrap_or(Vec3::Y)
+        .normalize_or_zero();
     let yaw_rot = Quat::from_rotation_y(plyr.yaw);
     let target = Quat::from_rotation_arc(Vec3::Y, ground_n) * yaw_rot;
     tf.rotation = tf.rotation.slerp(target, params.ground_align_lerp);
