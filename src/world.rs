@@ -27,10 +27,10 @@ fn setup_world(
         ))
         .insert(RigidBody::Static);
 
-    commands.insert_resource(AmbientLight {
-        brightness: 1.0,
-        ..default()
-    });
+    // commands.insert_resource(AmbientLight {
+    //     brightness: 0.25,
+    //     ..default()
+    // });
 
     let mesh = meshes.add(Cuboid::new(0.25, 0.25, 0.25));
     let wheel_mesh = meshes.add(Cuboid::new(0.1, 0.1, 0.1));
@@ -63,12 +63,12 @@ fn setup_world(
             }
 
             // Headlights - slightly yellow directional lights
-            let head_color = Color::rgb(1.0, 1.0, 0.8);
+            let head_color = Color::srgb(1.0, 1.0, 0.8);
             let front_z = 0.25 + 0.05;
             parent
                 .spawn(DirectionalLight {
                     color: head_color,
-                    illuminance: 2000.0,
+                    illuminance: 1000.0,
                     ..default()
                 })
                 .insert(
@@ -78,7 +78,7 @@ fn setup_world(
             parent
                 .spawn(DirectionalLight {
                     color: head_color,
-                    illuminance: 2000.0,
+                    illuminance: 20.0,
                     ..default()
                 })
                 .insert(
@@ -88,7 +88,7 @@ fn setup_world(
 
             // Tail lights - red point lights
             let back_z = -0.25 - 0.05;
-            let tail_color = Color::rgb(1.0, 0.0, 0.0);
+            let tail_color = Color::srgb(1.0, 0.0, 0.0);
             parent
                 .spawn(PointLight {
                     intensity: 100.0,
