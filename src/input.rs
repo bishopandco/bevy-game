@@ -71,7 +71,7 @@ fn player_move_system(
         );
         for _ in 0..SUBSTEPS {
             move_horizontal(&spatial, &params, entity, &col, &mut tf, &mut plyr, dt);
-            move_vertical(&spatial, entity, &col, &mut tf, &mut plyr, dt);
+            move_vertical(&spatial, &params, entity, &col, &mut tf, &mut plyr, dt);
         }
     }
 }
@@ -187,6 +187,7 @@ fn slide(remaining: &mut Vec3, normal: Vec3, plyr: &mut Player, params: &GamePar
 
 fn move_vertical(
     spatial: &SpatialQuery,
+    params: &GameParams,
     entity: Entity,
     col: &Collider,
     tf: &mut Transform,
