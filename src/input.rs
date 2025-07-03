@@ -15,6 +15,41 @@ const RESPAWN_POS: Vec3 = Vec3::new(0.0, 1.5, 0.0);
 const RESPAWN_YAW: f32 = 0.0;
 const JUMP_IMPULSE: f32 = 5.0;
 
+// Helper to compute the relative offsets for the four wheels
+fn wheel_offsets(plyr: &Player) -> [Vec3; 4] {
+    let ext = plyr.half_extents;
+    [
+        Vec3::new(ext.x, -ext.y, ext.z),
+        Vec3::new(ext.x, -ext.y, -ext.z),
+        Vec3::new(-ext.x, -ext.y, ext.z),
+        Vec3::new(-ext.x, -ext.y, -ext.z),
+    ]
+}
+
+// Cast rays from each wheel towards the ground and return the hit points and normals
+fn wheel_ground_hits(
+    spatial: &SpatialQuery,
+    entity: Entity,
+    tf: &Transform,
+    plyr: &Player,
+) -> Vec<(Vec3, Vec3)> {
+    let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
+    let mut out = Vec::new();
+    for offset in wheel_offsets(plyr) {
+        let world_pos = tf.translation + tf.rotation * offset;
+        if let Some(hit) = spatial.cast_ray(
+            world_pos,
+            Dir3::NEG_Y,
+            plyr.half_extents.y + STEP_HEIGHT + SKIN,
+            false,
+            &filter,
+        ) {
+            out.push((hit.point, hit.normal));
+        }
+    }
+    out
+}
+
 #[derive(Component, Default)]
 pub struct Player {
     pub speed: f32,
@@ -205,7 +240,7 @@ fn move_vertical(
 
     plyr.vertical_vel -= params.gravity * dt;
     tf.translation.y += plyr.vertical_vel * dt;
-    resolve_vertical_collision(spatial, entity, col, tf, plyr);
+    resolve_vertical_collision(spatial, entity, col, tf, plyr, params);
 }
 
 fn resolve_vertical_collision(
@@ -214,6 +249,7 @@ fn resolve_vertical_collision(
     col: &Collider,
     tf: &mut Transform,
     plyr: &mut Player,
+    params: &GameParams,
 ) {
     let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
     if let Some(hit) = spatial.cast_shape(
@@ -231,7 +267,7 @@ fn resolve_vertical_collision(
         tf.translation.y = hit.point1.y + plyr.half_extents.y + SKIN;
         plyr.grounded = true;
         if plyr.vertical_vel < 0.0 {
-            plyr.speed *= 0.1;
+            plyr.speed *= 1.0 - params.collision_damping;
         }
         plyr.vertical_vel = 0.0;
     }
@@ -243,31 +279,26 @@ fn apply_ground_snap(
     tf: &mut Transform,
     plyr: &mut Player,
 ) {
-    let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
-    let grounded_now = spatial
-        .cast_ray(
-            tf.translation,
-            Dir3::NEG_Y,
-            plyr.half_extents.y + STEP_HEIGHT + SKIN,
-            false,
-            &filter,
-        )
-        .is_some();
-    plyr.grounded = grounded_now;
+    let hits = wheel_ground_hits(spatial, entity, tf, plyr);
+    if hits.is_empty() {
+        plyr.grounded = false;
+        return;
+    }
+    plyr.grounded = true;
+    let avg_y = hits.iter().map(|(p, _)| p.y).sum::<f32>() / hits.len() as f32;
+    tf.translation.y = avg_y + plyr.half_extents.y + SKIN;
 }
 
 fn orient_to_ground(spatial: &SpatialQuery, entity: Entity, tf: &mut Transform, plyr: &Player) {
-    let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
-    let ground_n = spatial
-        .cast_ray(
-            tf.translation,
-            Dir3::NEG_Y,
-            plyr.half_extents.y + STEP_HEIGHT + SKIN,
-            false,
-            &filter,
-        )
-        .map(|h| h.normal)
-        .unwrap_or(Vec3::Y);
+    let hits = wheel_ground_hits(spatial, entity, tf, plyr);
+    let ground_n = if hits.is_empty() {
+        Vec3::Y
+    } else {
+        hits.iter()
+            .map(|(_, n)| *n)
+            .fold(Vec3::ZERO, |a, b| a + b)
+            .normalize_or_zero()
+    };
     let yaw_rot = Quat::from_rotation_y(plyr.yaw);
     let target = Quat::from_rotation_arc(Vec3::Y, ground_n) * yaw_rot;
     const ROT_SMOOTH: f32 = 0.2;
