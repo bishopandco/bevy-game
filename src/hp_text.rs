@@ -22,13 +22,13 @@ impl Plugin for HpTextPlugin {
 fn hp_text_system(
     time: Res<Time>,
     mut commands: Commands,
-    mut q: Query<(Entity, &mut Text, &mut Transform, &mut HpText)>,
+    mut q: Query<(Entity, &mut TextColor, &mut Transform, &mut HpText)>,
 ) {
-    for (entity, mut text, mut tf, mut hp_text) in &mut q {
+    for (entity, mut color, mut tf, mut hp_text) in &mut q {
         hp_text.timer.tick(time.delta());
-        let pct = 1.0 - hp_text.timer.percent();
-        text.sections[0].style.color.set_a(pct);
-        tf.translation.y += time.delta_seconds() * 0.5;
+        let pct = hp_text.timer.fraction_remaining();
+        color.0 = color.0.with_alpha(pct);
+        tf.translation.y += time.delta_secs() * 0.5;
         if hp_text.timer.finished() {
             commands.entity(entity).despawn();
         }

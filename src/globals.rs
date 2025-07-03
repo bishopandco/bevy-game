@@ -45,7 +45,7 @@ impl Default for GameParams {
             mini_map_height: 400.0,
             gravity: 9.81,
             yaw_rate: std::f32::consts::PI / 2.0,
-            fire_rate: 5.0,
+            fire_rate: 50.0,
             collision_damping: 0.4,
             slope_damping: 0.2,
             slope_ease: 0.5,

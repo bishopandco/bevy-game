@@ -57,20 +57,19 @@ fn laser_hit_system(
                     target.hp = new_hp;
                 }
 
-                let font: Handle<Font> = asset_server.load("fonts/FiraSans-Bold.ttf");
-                commands.spawn(Text3dBundle {
-                    text: Text::from_section(
-                        format!("{} HP", new_hp),
-                        TextStyle {
-                            font,
-                            font_size: 20.0,
-                            color: Color::WHITE,
-                        },
-                    ),
-                    transform: Transform::from_translation(hit_pos),
-                    ..default()
-                })
-                .insert(HpText::new(1.0));
+                let font: Handle<Font> = asset_server.load("fonts/Arial.ttf");
+                commands.spawn((
+                    Text2d::new(format!("{} HP", new_hp)),
+                    TextFont {
+                        font,
+                        font_size: 20.0,
+                        ..default()
+                    },
+                    TextColor::WHITE,
+                    TextLayout::default(),
+                    Transform::from_translation(hit_pos),
+                    HpText::new(1.0),
+                ));
 
                 laser.velocity =
                     (laser.velocity - 2.0 * laser.velocity.dot(normal) * normal)
