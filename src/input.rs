@@ -44,7 +44,8 @@ fn wheel_ground_hits(
             false,
             &filter,
         ) {
-            out.push((hit.point, hit.normal));
+            let point = world_pos + Dir3::NEG_Y.as_vec3() * hit.distance;
+            out.push((point, hit.normal));
         }
     }
     out
