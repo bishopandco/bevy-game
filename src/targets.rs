@@ -1,16 +1,19 @@
 use bevy::prelude::*;
 
-use crate::weapons::Laser;
+use avian3d::prelude::{ColliderConstructor, ColliderConstructorHierarchy, RigidBody};
+
 use crate::hp_text::{HpText, HpTextPlugin};
+use crate::weapons::Laser;
 
 #[derive(Component)]
 pub struct Target {
     hp: i32,
+    half_extents: Vec3,
 }
 
 impl Target {
-    pub fn new(hp: i32) -> Self {
-        Self { hp }
+    pub fn new(hp: i32, half_extents: Vec3) -> Self {
+        Self { hp, half_extents }
     }
 }
 
@@ -33,7 +36,11 @@ fn spawn_target(mut commands: Commands, asset_server: Res<AssetServer>) {
         .spawn(SceneRoot(scene))
         .insert(Transform::from_xyz(0.0, 0.0, 0.0))
         .insert(GlobalTransform::default())
-        .insert(Target::new(100));
+        .insert(ColliderConstructorHierarchy::new(
+            ColliderConstructor::TrimeshFromMesh,
+        ))
+        .insert(RigidBody::Static)
+        .insert(Target::new(100, Vec3::new(1.0, 18.0, 1.0)));
 }
 
 const LASER_DAMAGE: i32 = 5;
@@ -46,10 +53,13 @@ fn laser_hit_system(
 ) {
     for (mut laser_tf, mut laser) in &mut lasers {
         for (target_entity, target_tf, mut target) in &mut targets {
-            let dist = laser_tf.translation.distance(target_tf.translation);
-            if dist < 1.0 {
-                let normal = (laser_tf.translation - target_tf.translation).normalize();
-                let hit_pos = target_tf.translation + normal;
+            let local = laser_tf.translation - target_tf.translation;
+            if local.x.abs() < target.half_extents.x
+                && local.y.abs() < target.half_extents.y
+                && local.z.abs() < target.half_extents.z
+            {
+                let normal = local.normalize_or_zero();
+                let hit_pos = laser_tf.translation;
                 let new_hp = (target.hp - LASER_DAMAGE).max(0);
                 if new_hp == 0 {
                     commands.entity(target_entity).despawn();
