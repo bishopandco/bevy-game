@@ -5,6 +5,7 @@ use bevy::{
     log::info,
     prelude::*,
 };
+use bevy::prelude::Parent;
 
 const STEP_HEIGHT: f32 = 0.25;
 const MAX_SLOPE_COS: f32 = 0.707;
