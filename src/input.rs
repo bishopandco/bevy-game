@@ -5,7 +5,7 @@ use bevy::{
     log::info,
     prelude::*,
 };
-use bevy::prelude::Parent;
+use bevy::hierarchy::Parent;
 
 const STEP_HEIGHT: f32 = 0.25;
 const MAX_SLOPE_COS: f32 = 0.707;
@@ -39,7 +39,7 @@ fn wheel_ground_hits(
     let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
     let mut out = Vec::new();
     for offset in wheel_offsets(plyr) {
-        let world_pos = tf.translation + tf.rotation * offset;
+        let world_pos = tf.translation + tf.rotation.mul_vec3(offset);
         if let Some(hit) = spatial.cast_ray(
             world_pos,
             Dir3::NEG_Y,
@@ -332,7 +332,7 @@ fn wheel_suspension_system(
 ) {
     for (parent, mut tf, wheel) in &mut wheels {
         if let Ok((player_tf, _)) = player_q.get(parent.get()) {
-            let world_pos = player_tf.translation + player_tf.rotation * wheel.offset;
+            let world_pos = player_tf.translation + player_tf.rotation.mul_vec3(wheel.offset);
             let filter = SpatialQueryFilter::default().with_excluded_entities([parent.get()]);
             if let Some(hit) = spatial.cast_ray(
                 world_pos,
