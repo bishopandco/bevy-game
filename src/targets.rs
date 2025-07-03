@@ -61,13 +61,15 @@ fn laser_hit_system(
                 "checking laser at {:?} against target at {:?}",
                 laser_tf.translation, target_tf.translation
             );
-            let local = laser_tf.translation - target_tf.translation;
-            if local.x.abs() < target.half_extents.x
-                && local.y.abs() < target.half_extents.y
-                && local.z.abs() < target.half_extents.z
-            {
-                let normal = local.normalize_or_zero();
-                let hit_pos = laser_tf.translation + normal * 0.1;
+            let start = laser.prev_position;
+            let end = laser_tf.translation;
+            if let Some(hit_pos) = segment_intersects_aabb(
+                start,
+                end,
+                target_tf.translation,
+                target.half_extents,
+            ) {
+                let normal = (hit_pos - target_tf.translation).normalize_or_zero();
                 let new_hp = (target.hp - LASER_DAMAGE).max(0);
                 target.hp = new_hp;
                 if new_hp == 0 {
@@ -91,11 +93,49 @@ fn laser_hit_system(
                 ));
                 info!("spawned hp text at {:?}", hit_pos);
 
-                laser.velocity = (laser.velocity - 2.0 * laser.velocity.dot(normal) * normal)
-                    * crate::weapons::LASER_BOUNCE_DECAY;
+                laser.velocity =
+                    (laser.velocity - 2.0 * laser.velocity.dot(normal) * normal)
+                        * crate::weapons::LASER_BOUNCE_DECAY;
                 laser_tf.translation = hit_pos;
                 break;
             }
         }
+        laser.prev_position = laser_tf.translation;
     }
+}
+
+fn segment_intersects_aabb(
+    start: Vec3,
+    end: Vec3,
+    center: Vec3,
+    half_extents: Vec3,
+) -> Option<Vec3> {
+    let dir = end - start;
+    let axes = [
+        (start.x, dir.x, center.x - half_extents.x, center.x + half_extents.x),
+        (start.y, dir.y, center.y - half_extents.y, center.y + half_extents.y),
+        (start.z, dir.z, center.z - half_extents.z, center.z + half_extents.z),
+    ];
+    let mut tmin = 0.0;
+    let mut tmax = 1.0;
+    for (s, d, min, max) in axes {
+        if d.abs() < f32::EPSILON {
+            if s < min || s > max {
+                return None;
+            }
+        } else {
+            let inv_d = 1.0 / d;
+            let mut t1 = (min - s) * inv_d;
+            let mut t2 = (max - s) * inv_d;
+            if t1 > t2 {
+                std::mem::swap(&mut t1, &mut t2);
+            }
+            tmin = tmin.max(t1);
+            tmax = tmax.min(t2);
+            if tmin > tmax {
+                return None;
+            }
+        }
+    }
+    Some(start + dir * tmin)
 }

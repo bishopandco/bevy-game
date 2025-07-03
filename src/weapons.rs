@@ -17,6 +17,7 @@ impl Plugin for WeaponPlugin {
 #[derive(Component)]
 pub struct Laser {
     pub(crate) velocity: Vec3,
+    pub(crate) prev_position: Vec3,
     life: f32,
     material: Handle<StandardMaterial>,
 }
@@ -67,6 +68,7 @@ fn player_fire_system(
                 .insert(Transform::from_translation(pos).looking_at(pos + forward, Vec3::Y))
                 .insert(Laser {
                     velocity: forward * LASER_SPEED,
+                    prev_position: pos,
                     life: LASER_LIFETIME,
                     material,
                 });
@@ -86,6 +88,7 @@ pub fn laser_movement_system(
     let dt = time.delta_secs();
     let col = Collider::cuboid(0.025, 0.025, 0.15);
     for (e, mut tf, mut laser, mut light) in &mut q {
+        let start_pos = tf.translation;
         let mut remaining = laser.velocity * dt;
         let filter = SpatialQueryFilter::default().with_excluded_entities([e]);
         for _ in 0..2 {
@@ -134,5 +137,7 @@ pub fn laser_movement_system(
         if laser.life <= 0.0 {
             commands.entity(e).despawn();
         }
+
+        laser.prev_position = start_pos;
     }
 }
