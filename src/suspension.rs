@@ -17,7 +17,7 @@ pub fn suspension_system(
             false,
             &SpatialQueryFilter::default(),
         ) {
-            let disp = tuning.suspension.max_travel + wheel.radius - hit.time_of_impact;
+            let disp = tuning.suspension.max_travel + wheel.radius - hit.distance;
             let spring = tuning.suspension.spring_k * disp;
             let damp = tuning.suspension.damping_c * vel.y;
             vel.y += (spring - damp) * 0.016;
