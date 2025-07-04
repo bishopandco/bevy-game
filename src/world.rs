@@ -38,9 +38,7 @@ fn setup_world(
     let player = Player {
         speed: 0.0,
         vertical_vel: 0.0,
-        vertical_input: 0.0,
         yaw: 0.0,
-        prev_yaw: 0.0,
         half_extents: Vec3::splat(0.5),
         grounded: false,
         fire_timer: 0.0,

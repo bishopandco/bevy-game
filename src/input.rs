@@ -2,24 +2,30 @@ use crate::globals::GameParams;
 use avian3d::prelude::*;
 use bevy::{
     input::{keyboard::KeyCode, ButtonInput},
-    log::info,
     prelude::*,
 };
 use bevy::prelude::ChildOf;
 
-const STEP_HEIGHT: f32 = 0.25;
-const MAX_SLOPE_COS: f32 = 0.707;
-const SKIN: f32 = 0.1;
-const SUBSTEPS: u32 = 4;
-const FALL_RESET_Y: f32 = -100.0;
-const RESPAWN_POS: Vec3 = Vec3::new(0.0, 1.5, 0.0);
-const RESPAWN_YAW: f32 = 0.0;
-const JUMP_IMPULSE: f32 = 5.0;
+const WHEEL_RAY_LENGTH: f32 = 1.0;
+const SUSPENSION_SMOOTH: f32 = 0.4;
 const LAUNCH_SPEED: f32 = 20.0;
-const DRIFT_FACTOR: f32 = 0.3;
-const SUSPENSION_SMOOTH: f32 = 0.5;
 
-// Helper to compute the relative offsets for the four wheels
+#[derive(Component, Default)]
+pub struct Player {
+    pub speed: f32,
+    pub vertical_vel: f32,
+    pub yaw: f32,
+    pub half_extents: Vec3,
+    pub grounded: bool,
+    pub fire_timer: f32,
+    pub weapon_energy: f32,
+}
+
+#[derive(Component)]
+pub struct Wheel {
+    pub offset: Vec3,
+}
+
 pub fn wheel_offsets(plyr: &Player) -> [Vec3; 4] {
     let ext = plyr.half_extents;
     [
@@ -30,8 +36,7 @@ pub fn wheel_offsets(plyr: &Player) -> [Vec3; 4] {
     ]
 }
 
-// Cast rays from each wheel towards the ground and return the hit points and normals
-fn wheel_ground_hits(
+fn wheel_hits(
     spatial: &SpatialQuery,
     entity: Entity,
     tf: &Transform,
@@ -44,7 +49,7 @@ fn wheel_ground_hits(
         if let Some(hit) = spatial.cast_ray(
             world_pos,
             Dir3::NEG_Y,
-            plyr.half_extents.y + STEP_HEIGHT + SKIN,
+            WHEEL_RAY_LENGTH + plyr.half_extents.y,
             false,
             &filter,
         ) {
@@ -55,24 +60,6 @@ fn wheel_ground_hits(
     out
 }
 
-#[derive(Component, Default)]
-pub struct Player {
-    pub speed: f32,
-    pub vertical_vel: f32,
-    pub vertical_input: f32,
-    pub yaw: f32,
-    pub prev_yaw: f32,
-    pub half_extents: Vec3,
-    pub grounded: bool,
-    pub fire_timer: f32,
-    pub weapon_energy: f32,
-}
-
-#[derive(Component)]
-pub struct Wheel {
-    pub offset: Vec3,
-}
-
 pub struct PlayerControlPlugin;
 impl Plugin for PlayerControlPlugin {
     fn build(&self, app: &mut App) {
@@ -80,10 +67,8 @@ impl Plugin for PlayerControlPlugin {
             Update,
             (
                 player_input_system,
-                player_move_system.after(player_input_system),
-                fall_reset_system,
-                player_orientation_system.after(player_move_system),
-                wheel_suspension_system.after(player_orientation_system),
+                car_movement_system.after(player_input_system),
+                wheel_suspension_system.after(car_movement_system),
             ),
         );
     }
@@ -93,241 +78,79 @@ fn player_input_system(
     time: Res<Time>,
     keys: Res<ButtonInput<KeyCode>>,
     params: Res<GameParams>,
-    mut q: Query<&mut Player>,
+    mut players: Query<&mut Player>,
 ) {
     let dt = time.delta_secs();
-    for mut plyr in &mut q {
-        update_speed(&keys, &params, &mut plyr, dt);
-        update_yaw(&keys, &params, &mut plyr, dt);
-        update_vertical_input(&keys, &mut plyr);
+    for mut plyr in &mut players {
+        if keys.pressed(KeyCode::ArrowUp) {
+            plyr.speed += params.acceleration * dt;
+        } else if keys.pressed(KeyCode::ArrowDown) {
+            if plyr.speed > 0.0 {
+                plyr.speed -= params.brake_deceleration * dt;
+            } else {
+                plyr.speed -= params.brake_acceleration * dt;
+            }
+        } else {
+            let sign = plyr.speed.signum();
+            plyr.speed -= sign * params.friction * dt;
+            if plyr.speed.signum() != sign {
+                plyr.speed = 0.0;
+            }
+        }
+        plyr.speed = plyr.speed.clamp(-params.max_speed, params.max_speed);
+
+        if keys.pressed(KeyCode::ArrowLeft) {
+            plyr.yaw += params.yaw_rate * dt;
+        }
+        if keys.pressed(KeyCode::ArrowRight) {
+            plyr.yaw -= params.yaw_rate * dt;
+        }
     }
 }
 
-fn player_move_system(
+fn car_movement_system(
     time: Res<Time>,
     params: Res<GameParams>,
     spatial: SpatialQuery,
     mut q: Query<(Entity, &mut Transform, &mut Player)>,
 ) {
-    let dt = time.delta_secs() / SUBSTEPS as f32;
+    let dt = time.delta_secs();
     for (entity, mut tf, mut plyr) in &mut q {
-        let col = Collider::cuboid(
-            plyr.half_extents.x,
-            plyr.half_extents.y,
-            plyr.half_extents.z,
-        );
-        for _ in 0..SUBSTEPS {
-            move_horizontal(&spatial, &params, entity, &col, &mut tf, &mut plyr, dt);
-            move_vertical(&spatial, &params, entity, &col, &mut tf, &mut plyr, dt);
-        }
-    }
-}
+        let yaw_rot = Quat::from_rotation_y(plyr.yaw);
+        let forward = yaw_rot * Vec3::Z;
+        tf.translation += forward * plyr.speed * dt;
 
-fn player_orientation_system(
-    spatial: SpatialQuery,
-    mut q: Query<(Entity, &mut Transform, &mut Player)>,
-) {
-    for (entity, mut tf, mut plyr) in &mut q {
-        apply_ground_snap(&spatial, entity, &mut tf, &mut plyr);
-        if plyr.grounded {
-            orient_to_ground(&spatial, entity, &mut tf, &plyr);
-        }
-    }
-}
-
-fn update_speed(keys: &ButtonInput<KeyCode>, params: &GameParams, plyr: &mut Player, dt: f32) {
-    if keys.pressed(KeyCode::ArrowUp) {
-        plyr.speed = (plyr.speed + params.acceleration * dt).min(params.max_speed);
-    } else if keys.pressed(KeyCode::ArrowDown) {
-        plyr.speed = (plyr.speed - params.brake_acceleration * dt).max(-params.max_speed);
-    } else {
-        plyr.speed = plyr.speed.signum() * (plyr.speed.abs() - params.friction * dt).max(0.0);
-    }
-}
-
-fn update_yaw(keys: &ButtonInput<KeyCode>, params: &GameParams, plyr: &mut Player, dt: f32) {
-    if keys.pressed(KeyCode::ArrowLeft) {
-        plyr.yaw += params.yaw_rate * dt;
-    }
-    if keys.pressed(KeyCode::ArrowRight) {
-        plyr.yaw -= params.yaw_rate * dt;
-    }
-}
-
-fn update_vertical_input(keys: &ButtonInput<KeyCode>, plyr: &mut Player) {
-    if keys.just_pressed(KeyCode::KeyW) {
-        plyr.vertical_input = 1.0;
-    } else if keys.just_pressed(KeyCode::KeyS) {
-        plyr.vertical_input = -1.0;
-    } else {
-        plyr.vertical_input = 0.0;
-    }
-}
-
-fn move_horizontal(
-    spatial: &SpatialQuery,
-    params: &GameParams,
-    entity: Entity,
-    col: &Collider,
-    tf: &mut Transform,
-    plyr: &mut Player,
-    dt: f32,
-) {
-    let yaw_rot = Quat::from_rotation_y(plyr.yaw);
-    let forward = yaw_rot * Vec3::Z;
-    let delta_yaw = plyr.yaw - plyr.prev_yaw;
-    plyr.prev_yaw = plyr.yaw;
-    let side = yaw_rot * Vec3::X * delta_yaw * DRIFT_FACTOR * plyr.speed.abs();
-    let mut remaining = (forward * plyr.speed + side) * dt;
-    let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
-
-    for _ in 0..3 {
-        let dist = remaining.length();
-        if dist < f32::EPSILON {
-            break;
-        }
-        let dir = Dir3::new_unchecked(remaining / dist);
-        match spatial.cast_shape(
-            col,
-            tf.translation,
-            tf.rotation,
-            dir,
-            &ShapeCastConfig {
-                compute_contact_on_penetration: true,
-                max_distance: dist + SKIN,
-                ..Default::default()
-            },
-            &filter,
-        ) {
-            Some(hit) => {
-                tf.translation += dir.as_vec3() * (hit.distance - SKIN).max(0.0);
-                if hit.normal1.y > MAX_SLOPE_COS {
-                    plyr.grounded = true;
-                }
-                slide(&mut remaining, hit.normal1, plyr, params);
-            }
-            None => {
-                tf.translation += remaining;
-                break;
+        let hits = wheel_hits(&spatial, entity, &tf, &plyr);
+        if hits.is_empty() {
+            plyr.grounded = false;
+        } else {
+            let avg_y = hits.iter().map(|(p, _)| p.y).sum::<f32>() / hits.len() as f32;
+            let ground_n = hits
+                .iter()
+                .map(|(_, n)| *n)
+                .fold(Vec3::ZERO, |a, b| a + b)
+                .normalize_or_zero();
+            let contact = hits.iter().any(|(p, _)| {
+                (tf.translation.y - plyr.half_extents.y) - p.y <= WHEEL_RAY_LENGTH
+            });
+            if contact && plyr.speed.abs() < LAUNCH_SPEED {
+                plyr.grounded = true;
+                let target_y = avg_y + plyr.half_extents.y;
+                tf.translation.y = tf.translation.y.lerp(target_y, 0.5);
+                plyr.vertical_vel = 0.0;
+                let target_rot = Quat::from_rotation_arc(Vec3::Y, ground_n) * yaw_rot;
+                tf.rotation = tf.rotation.slerp(target_rot, 0.2);
+            } else {
+                plyr.grounded = false;
             }
         }
-    }
-}
 
-fn slide(remaining: &mut Vec3, normal: Vec3, plyr: &mut Player, params: &GameParams) {
-    let incoming = *remaining;
-    // Project the movement onto the collision plane to keep momentum
-    *remaining -= remaining.dot(normal) * normal;
-
-    // reduce momentum based on collision
-    let mut factor = 1.0 - params.collision_damping;
-    if normal.y > 0.0 && normal.y < 1.0 {
-        let slope = 1.0 - normal.y;
-        let eased = slope.powf(params.slope_ease);
-        factor *= 1.0 - eased * params.slope_damping;
-    }
-    factor = factor.clamp(0.0, 1.0);
-    *remaining *= factor;
-    plyr.speed *= factor;
-
-    // add a small bounce based on collision angle
-    let reflect_dir = (incoming - 2.0 * incoming.dot(normal) * normal).normalize_or_zero();
-    let incident_angle = incoming.normalize_or_zero().dot(-normal).abs();
-    let bounce = incoming.length() * params.bounce_factor * incident_angle;
-    *remaining += reflect_dir * bounce;
-}
-
-fn move_vertical(
-    spatial: &SpatialQuery,
-    params: &GameParams,
-    entity: Entity,
-    col: &Collider,
-    tf: &mut Transform,
-    plyr: &mut Player,
-    dt: f32,
-) {
-    // re-check ground contact before applying gravity
-    apply_ground_snap(spatial, entity, tf, plyr);
-
-    if plyr.vertical_input != 0.0 {
-        plyr.vertical_vel = plyr.vertical_input * JUMP_IMPULSE;
-        plyr.vertical_input = 0.0;
-        plyr.grounded = false;
-    }
-
-    if !plyr.grounded {
-        plyr.vertical_vel -= params.gravity * dt;
-    } else {
-        plyr.vertical_vel = 0.0;
-    }
-    tf.translation.y += plyr.vertical_vel * dt;
-    resolve_vertical_collision(spatial, entity, col, tf, plyr, params);
-}
-
-fn resolve_vertical_collision(
-    spatial: &SpatialQuery,
-    entity: Entity,
-    col: &Collider,
-    tf: &mut Transform,
-    plyr: &mut Player,
-    params: &GameParams,
-) {
-    let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
-    if let Some(hit) = spatial.cast_shape(
-        col,
-        tf.translation + Vec3::Y * (plyr.half_extents.y + STEP_HEIGHT),
-        tf.rotation,
-        Dir3::NEG_Y,
-        &ShapeCastConfig {
-            compute_contact_on_penetration: true,
-            max_distance: plyr.half_extents.y + STEP_HEIGHT + SKIN,
-            ..Default::default()
-        },
-        &filter,
-    ) {
-        tf.translation.y = hit.point1.y + plyr.half_extents.y + SKIN;
-        plyr.grounded = true;
-        if plyr.vertical_vel < 0.0 {
-            plyr.speed *= 1.0 - params.collision_damping;
+        if !plyr.grounded {
+            plyr.vertical_vel -= params.gravity * dt;
+            tf.translation.y += plyr.vertical_vel * dt;
+            tf.rotation = Quat::from_rotation_y(plyr.yaw);
         }
-        plyr.vertical_vel = 0.0;
     }
-}
-
-fn apply_ground_snap(
-    spatial: &SpatialQuery,
-    entity: Entity,
-    tf: &mut Transform,
-    plyr: &mut Player,
-) {
-    if plyr.speed.abs() > LAUNCH_SPEED {
-        plyr.grounded = false;
-        return;
-    }
-    let hits = wheel_ground_hits(spatial, entity, tf, plyr);
-    if hits.is_empty() {
-        plyr.grounded = false;
-        return;
-    }
-    plyr.grounded = true;
-    let avg_y = hits.iter().map(|(p, _)| p.y).sum::<f32>() / hits.len() as f32;
-    tf.translation.y = avg_y + plyr.half_extents.y + SKIN;
-}
-
-fn orient_to_ground(spatial: &SpatialQuery, entity: Entity, tf: &mut Transform, plyr: &Player) {
-    let hits = wheel_ground_hits(spatial, entity, tf, plyr);
-    let ground_n = if hits.is_empty() {
-        Vec3::Y
-    } else {
-        hits.iter()
-            .map(|(_, n)| *n)
-            .fold(Vec3::ZERO, |a, b| a + b)
-            .normalize_or_zero()
-    };
-    let yaw_rot = Quat::from_rotation_y(plyr.yaw);
-    let target = Quat::from_rotation_arc(Vec3::Y, ground_n) * yaw_rot;
-    const ROT_SMOOTH: f32 = 0.2;
-    tf.rotation = tf.rotation.slerp(target, ROT_SMOOTH);
 }
 
 fn wheel_suspension_system(
@@ -336,37 +159,21 @@ fn wheel_suspension_system(
     mut wheels: Query<(&ChildOf, &mut Transform, &Wheel), Without<Player>>,
 ) {
     for (child_of, mut tf, wheel) in &mut wheels {
-        if let Ok((player_tf, _)) = player_q.get(child_of.parent()) {
+        if let Ok((player_tf, plyr)) = player_q.get(child_of.parent()) {
             let world_pos = player_tf.translation + player_tf.rotation.mul_vec3(wheel.offset);
             let filter = SpatialQueryFilter::default().with_excluded_entities([child_of.parent()]);
             let target = if let Some(hit) = spatial.cast_ray(
                 world_pos,
                 Dir3::NEG_Y,
-                STEP_HEIGHT,
+                WHEEL_RAY_LENGTH,
                 false,
                 &filter,
             ) {
-                wheel.offset + Vec3::Y * (-hit.distance + STEP_HEIGHT)
+                wheel.offset + Vec3::Y * (-hit.distance)
             } else {
-                wheel.offset - Vec3::Y * STEP_HEIGHT
+                wheel.offset - Vec3::Y * WHEEL_RAY_LENGTH
             };
             tf.translation = tf.translation.lerp(target, SUSPENSION_SMOOTH);
-        }
-    }
-}
-
-fn fall_reset_system(mut q: Query<(&mut Transform, &mut Player)>) {
-    for (mut tf, mut plyr) in &mut q {
-        if tf.translation.y < FALL_RESET_Y {
-            info!("respawn");
-            tf.translation = RESPAWN_POS;
-            plyr.speed = 0.0;
-            plyr.vertical_vel = 0.0;
-            plyr.vertical_input = 0.0;
-            plyr.grounded = false;
-            plyr.yaw = RESPAWN_YAW;
-            plyr.fire_timer = 0.0;
-            plyr.weapon_energy = 1.0;
         }
     }
 }

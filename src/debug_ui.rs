@@ -102,7 +102,6 @@ fn handle_respawn(
         tf.translation = Vec3::new(0.0, 3.0, 0.0);
         plyr.speed = 0.0;
         plyr.vertical_vel = 0.0;
-        plyr.vertical_input = 0.0;
         plyr.fire_timer = 0.0;
         plyr.weapon_energy = 1.0;
     }
