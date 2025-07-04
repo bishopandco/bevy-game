@@ -4,7 +4,7 @@ use game_demo::camera::CameraPlugin;
 use game_demo::debug_ui::DebugUiPlugin;
 use game_demo::hud::HudPlugin;
 use game_demo::globals::GameParams;
-use game_demo::input::PlayerControlPlugin;
+use game_demo::vehicle_plugin::VehiclePlugin;
 use game_demo::weapons::WeaponPlugin;
 use game_demo::weapon_hud::WeaponHudPlugin;
 use game_demo::minimap::MiniMapPlugin;
@@ -30,7 +30,7 @@ fn main() {
             TargetsPlugin,
             GoalsPlugin,
             SkyDomePlugin,
-            PlayerControlPlugin,
+            VehiclePlugin,
             WeaponPlugin,
             CameraPlugin,
             MiniMapPlugin,

@@ -14,3 +14,7 @@ pub mod lap_timer;
 pub mod socket_client;
 pub mod chat;
 pub mod hp_text;
+pub mod vehicle;
+pub mod vehicle_plugin;
+pub mod suspension;
+pub mod controls;
