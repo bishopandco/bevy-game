@@ -83,7 +83,7 @@ impl Default for WheelBundle {
             wheel: Wheel { offset: Vec3::ZERO, radius: 0.75, width: 0.3, steer: false, drive: false },
             rb: RigidBody::Dynamic,
             collider: Collider::cylinder(0.75, 0.15),
-            transform: Transform::default(),
+            transform: Transform::from_rotation(Quat::from_rotation_z(-std::f32::consts::FRAC_PI_2)),
             global_transform: GlobalTransform::default(),
         }
     }
@@ -121,7 +121,11 @@ pub fn spawn_vehicle(
                     drive: true,
                     ..Default::default()
                 },
-                transform: Transform::from_translation(pos + offset),
+                transform: Transform {
+                    translation: pos + offset,
+                    rotation: Quat::from_rotation_z(-std::f32::consts::FRAC_PI_2),
+                    ..default()
+                },
                 ..Default::default()
             })
             .id();
