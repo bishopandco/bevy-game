@@ -31,7 +31,7 @@ pub struct Vehicle {
     pub drive_mode: DriveMode,
 }
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct Wheel {
     pub offset: Vec3,
     pub radius: f32,
@@ -112,7 +112,7 @@ pub fn spawn_vehicle(
         let axle = commands
             .spawn((RigidBody::Dynamic, Transform::from_translation(pos + offset), GlobalTransform::default()))
             .id();
-        commands.entity(vehicle).push_children(&[axle]);
+        commands.entity(vehicle).add_child(axle);
 
         let wheel = commands
             .spawn(WheelBundle {
@@ -127,7 +127,7 @@ pub fn spawn_vehicle(
             })
             .id();
 
-        commands.entity(vehicle).push_children(&[wheel]);
+        commands.entity(vehicle).add_child(wheel);
 
 
         commands.spawn(

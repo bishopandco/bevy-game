@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 use avian3d::prelude::*;
 
-use crate::vehicle::{Vehicle, Wheel, VehicleTuning};
+use crate::vehicle::{Vehicle, Wheel, VehicleTuning, SuspensionParams};
+use bevy::prelude::Parent;
 
 fn apply_suspension(
     start: Vec3,
