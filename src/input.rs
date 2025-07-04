@@ -122,38 +122,64 @@ fn car_movement_system(
             let forward = yaw_rot * Vec3::Z;
             tf.translation += forward * plyr.speed * sub_dt;
 
-            let hits = wheel_hits(&spatial, entity, &tf, &plyr);
-            if hits.is_empty() {
-                plyr.grounded = false;
-            } else {
-                let avg_y = hits.iter().map(|(p, _)| p.y).sum::<f32>() / hits.len() as f32;
-                let ground_n = hits
-                    .iter()
-                    .map(|(_, n)| *n)
-                    .fold(Vec3::ZERO, |a, b| a + b)
-                    .normalize_or_zero();
-                let contact = hits.iter().any(|(p, _)| {
-                    (tf.translation.y - plyr.half_extents.y) - p.y <= WHEEL_RAY_LENGTH
-                });
-                if contact && plyr.speed.abs() < LAUNCH_SPEED {
-                    plyr.grounded = true;
-                    let target_y = avg_y + plyr.half_extents.y;
-                    tf.translation.y = tf.translation.y.lerp(target_y, 0.5);
-                    plyr.vertical_vel = 0.0;
-                    let target_rot = Quat::from_rotation_arc(Vec3::Y, ground_n) * yaw_rot;
-                    tf.rotation = tf.rotation.slerp(target_rot, 0.2);
-                } else {
-                    plyr.grounded = false;
-                }
-            }
+            apply_ground_snap(&spatial, entity, &mut tf, &mut plyr);
 
             if !plyr.grounded {
                 plyr.vertical_vel -= params.gravity * sub_dt;
                 tf.translation.y += plyr.vertical_vel * sub_dt;
-                tf.rotation = Quat::from_rotation_y(plyr.yaw);
+            } else {
+                plyr.vertical_vel = 0.0;
             }
         }
+
+        if plyr.grounded {
+            orient_to_ground(&spatial, entity, &mut tf, &plyr);
+        } else {
+            tf.rotation = Quat::from_rotation_y(plyr.yaw);
+        }
     }
+}
+
+fn apply_ground_snap(
+    spatial: &SpatialQuery,
+    entity: Entity,
+    tf: &mut Transform,
+    plyr: &mut Player,
+) {
+    if plyr.speed.abs() > LAUNCH_SPEED {
+        plyr.grounded = false;
+        return;
+    }
+    let hits = wheel_hits(spatial, entity, tf, plyr);
+    if hits.is_empty() {
+        plyr.grounded = false;
+        return;
+    }
+    plyr.grounded = true;
+    let avg_y = hits.iter().map(|(p, _)| p.y).sum::<f32>() / hits.len() as f32;
+    tf.translation.y = avg_y + plyr.half_extents.y;
+}
+
+fn orient_to_ground(
+    spatial: &SpatialQuery,
+    entity: Entity,
+    tf: &mut Transform,
+    plyr: &Player,
+) {
+    let hits = wheel_hits(spatial, entity, tf, plyr);
+    let ground_n = if hits.is_empty() {
+        Vec3::Y
+    } else {
+        hits
+            .iter()
+            .map(|(_, n)| *n)
+            .fold(Vec3::ZERO, |a, b| a + b)
+            .normalize_or_zero()
+    };
+    let yaw_rot = Quat::from_rotation_y(plyr.yaw);
+    const ROT_SMOOTH: f32 = 0.2;
+    let target = Quat::from_rotation_arc(Vec3::Y, ground_n) * yaw_rot;
+    tf.rotation = tf.rotation.slerp(target, ROT_SMOOTH);
 }
 
 fn wheel_suspension_system(
