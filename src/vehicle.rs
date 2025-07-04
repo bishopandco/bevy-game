@@ -10,7 +10,7 @@ pub struct SuspensionParams {
 
 impl Default for SuspensionParams {
     fn default() -> Self {
-        Self { spring_k: 20.0, damping_c: 5.0, max_travel: 0.75 }
+        Self { spring_k: 300.0, damping_c: 40.0, max_travel: 0.75 }
     }
 }
 
@@ -83,7 +83,7 @@ impl Default for WheelBundle {
             wheel: Wheel { offset: Vec3::ZERO, radius: 0.75, width: 0.3, steer: false, drive: false },
             rb: RigidBody::Dynamic,
             collider: Collider::cylinder(0.75, 0.15),
-            transform: Transform::from_rotation(Quat::from_rotation_z(-std::f32::consts::FRAC_PI_2)),
+            transform: Transform::default(),
             global_transform: GlobalTransform::default(),
         }
     }
@@ -110,8 +110,9 @@ pub fn spawn_vehicle(
 
     for offset in wheel_offsets {
         let axle = commands
-            .spawn((RigidBody::Dynamic, Transform::from_translation(pos + offset)))
+            .spawn((RigidBody::Dynamic, Transform::from_translation(pos + offset), GlobalTransform::default()))
             .id();
+        commands.entity(vehicle).push_children(&[axle]);
 
         let wheel = commands
             .spawn(WheelBundle {
@@ -121,14 +122,13 @@ pub fn spawn_vehicle(
                     drive: true,
                     ..Default::default()
                 },
-                transform: Transform {
-                    translation: pos + offset,
-                    rotation: Quat::from_rotation_z(-std::f32::consts::FRAC_PI_2),
-                    ..default()
-                },
+                transform: Transform::from_translation(pos + offset),
                 ..Default::default()
             })
             .id();
+
+        commands.entity(vehicle).push_children(&[wheel]);
+
 
         commands.spawn(
             PrismaticJoint::new(vehicle, axle)
