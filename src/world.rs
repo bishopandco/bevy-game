@@ -27,83 +27,33 @@ fn setup_world(
         ))
         .insert(RigidBody::Static);
 
-    // commands.insert_resource(AmbientLight {
-    //     brightness: 0.25,
-    //     ..default()
-    // });
+    commands.insert_resource(AmbientLight {
+        brightness: 0.5,
+        ..default()
+    });
+    commands
+        .spawn(DirectionalLight {
+            illuminance: 3_000.0,
+            shadows_enabled: true,
+            ..default()
+        })
+        .insert(Transform::from_xyz(5.0, 10.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y));
 
-    let mesh = meshes.add(Cuboid::new(0.5, 0.5, 0.5));
-    let wheel_mesh = meshes.add(Cuboid::new(0.2, 0.2, 0.2));
-    let wheel_mat = materials.add(Color::srgb(0.2, 0.2, 0.2));
-    let player = Player {
-        speed: 0.0,
-        vertical_vel: 0.0,
-        yaw: 0.0,
-        half_extents: Vec3::splat(0.5),
-        grounded: false,
-        fire_timer: 0.0,
-        weapon_energy: 1.0,
-    };
-    let offsets = crate::input::wheel_offsets(&player);
+    let mesh = meshes.add(Cuboid::new(0.25, 0.25, 0.25));
     commands
         .spawn(Mesh3d(mesh))
         .insert(MeshMaterial3d(materials.add(Color::srgb(0.2, 0.8, 0.2))))
         .insert(Transform::from_xyz(0.0, 3.0, 0.0))
         .insert(RigidBody::Kinematic)
-        .insert(Collider::cuboid(0.5, 0.5, 0.5))
+        .insert(Collider::cuboid(0.25, 0.25, 0.25))
         .insert(LinearVelocity::ZERO)
-        .insert(player)
-        .with_children(|parent| {
-            for offset in offsets {
-                parent
-                    .spawn(Mesh3d(wheel_mesh.clone()))
-                    .insert(MeshMaterial3d(wheel_mat.clone()))
-                    .insert(Transform::from_translation(offset))
-                    .insert(crate::input::Wheel { offset });
-            }
-
-            // Headlights - slightly yellow directional lights
-            let head_color = Color::srgb(1.0, 1.0, 0.8);
-            let front_z = 0.5 + 0.1;
-            parent
-                .spawn(DirectionalLight {
-                    color: head_color,
-                    illuminance: 1000.0,
-                    ..default()
-                })
-                .insert(
-                    Transform::from_translation(Vec3::new(0.3, 0.0, front_z))
-                        .looking_at(Vec3::new(0.3, 0.0, front_z + 1.0), Vec3::Y),
-                );
-            parent
-                .spawn(DirectionalLight {
-                    color: head_color,
-                    illuminance: 20.0,
-                    ..default()
-                })
-                .insert(
-                    Transform::from_translation(Vec3::new(-0.3, 0.0, front_z))
-                        .looking_at(Vec3::new(-0.3, 0.0, front_z + 1.0), Vec3::Y),
-                );
-
-            // Tail lights - red point lights
-            let back_z = -0.5 - 0.1;
-            let tail_color = Color::srgb(1.0, 0.0, 0.0);
-            parent
-                .spawn(PointLight {
-                    intensity: 100.0,
-                    range: 5.0,
-                    color: tail_color,
-                    ..default()
-                })
-                .insert(Transform::from_translation(Vec3::new(0.3, 0.0, back_z)));
-            parent
-                .spawn(PointLight {
-                    intensity: 100.0,
-                    range: 5.0,
-                    color: tail_color,
-                    ..default()
-                })
-                .insert(Transform::from_translation(Vec3::new(-0.3, 0.0, back_z)));
+        .insert(Player {
+            speed: 0.0,
+            vertical_vel: 0.0,
+            yaw: 0.0,
+            half_extents: Vec3::splat(0.25),
+            grounded: false,
+            fire_timer: 0.0,
+            weapon_energy: 1.0,
         });
 }
