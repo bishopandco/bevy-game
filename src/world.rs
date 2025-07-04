@@ -1,5 +1,5 @@
 use crate::input::Player;
-use crate::vehicle::spawn_vehicle;
+use crate::vehicle::{spawn_vehicle, VehicleTuning};
 use avian3d::prelude::{Collider, ColliderConstructor, ColliderConstructorHierarchy};
 use avian3d::prelude::RigidBody;
 use bevy::prelude::*;
@@ -15,6 +15,7 @@ impl Plugin for WorldPlugin {
 fn setup_world(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    tuning: Res<VehicleTuning>,
 ) {
     let terrain: Handle<Scene> = asset_server.load("models/terrain.glb#Scene0");
     commands
@@ -38,7 +39,7 @@ fn setup_world(
         })
         .insert(Transform::from_xyz(5.0, 10.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y));
 
-    let vehicle = spawn_vehicle(&mut commands, Vec3::new(0.0, 3.0, 0.0));
+    let vehicle = spawn_vehicle(&mut commands, Vec3::new(0.0, 3.0, 0.0), &tuning);
     commands.entity(vehicle).insert(Player {
         half_extents: Vec3::splat(0.25),
         weapon_energy: 1.0,

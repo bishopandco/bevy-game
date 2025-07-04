@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use avian3d::prelude::*;
 
 use game_demo::vehicle_plugin::VehiclePlugin;
-use game_demo::vehicle::spawn_vehicle;
+use game_demo::vehicle::{spawn_vehicle, VehicleTuning};
 
 fn main() {
     App::new()
@@ -17,6 +17,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    tuning: Res<VehicleTuning>,
 ) {
     commands.spawn(DirectionalLight::default());
     let ground = meshes.add(Cuboid::new(50.0, 1.0, 50.0));
@@ -26,5 +27,5 @@ fn setup(
         .insert(Transform::from_xyz(0.0, -1.0, 0.0))
         .insert(RigidBody::Static)
         .insert(Collider::cuboid(50.0, 1.0, 50.0));
-    spawn_vehicle(&mut commands, Vec3::new(0.0, 2.0, 0.0));
+    spawn_vehicle(&mut commands, Vec3::new(0.0, 2.0, 0.0), &tuning);
 }

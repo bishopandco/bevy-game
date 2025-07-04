@@ -92,9 +92,13 @@ impl Default for WheelBundle {
 pub fn spawn_vehicle(
     commands: &mut Commands,
     pos: Vec3,
+    tuning: &VehicleTuning,
 ) -> Entity {
     let vehicle = commands
-        .spawn(VehicleBundle { transform: Transform::from_translation(pos), ..Default::default() })
+        .spawn(VehicleBundle {
+            transform: Transform::from_translation(pos),
+            ..Default::default()
+        })
         .id();
 
     let wheel_offsets = [
@@ -105,18 +109,33 @@ pub fn spawn_vehicle(
     ];
 
     for offset in wheel_offsets {
-        commands.entity(vehicle).with_children(|parent| {
-            parent.spawn(WheelBundle {
+        let axle = commands
+            .spawn((RigidBody::Dynamic, Transform::from_translation(pos + offset)))
+            .id();
+
+        let wheel = commands
+            .spawn(WheelBundle {
                 wheel: Wheel {
                     offset,
                     steer: offset.z > 0.0,
                     drive: true,
                     ..Default::default()
                 },
-                transform: Transform::from_translation(offset),
+                transform: Transform::from_translation(pos + offset),
                 ..Default::default()
-            });
-        });
+            })
+            .id();
+
+        commands.spawn(
+            PrismaticJoint::new(vehicle, axle)
+                .with_local_anchor_1(offset)
+                .with_free_axis(Vec3::Y)
+                .with_limits(-tuning.suspension.max_travel, 0.0),
+        );
+        commands.spawn(
+            RevoluteJoint::new(axle, wheel)
+                .with_aligned_axis(Vec3::X),
+        );
     }
 
     vehicle
