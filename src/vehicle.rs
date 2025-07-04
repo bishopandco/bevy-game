@@ -81,9 +81,9 @@ pub struct WheelBundle {
 impl Default for WheelBundle {
     fn default() -> Self {
         Self {
-            wheel: Wheel { offset: Vec3::ZERO, radius: 0.75, width: 0.3, steer: false, drive: false },
+            wheel: Wheel { offset: Vec3::ZERO, radius: 0.25, width: 0.3, steer: false, drive: false },
             rb: RigidBody::Dynamic,
-            collider: Collider::cylinder(0.75, 0.15),
+            collider: Collider::cylinder(0.25, 0.15),
             transform: Transform::default(),
             global_transform: GlobalTransform::default(),
         }

@@ -22,7 +22,7 @@ fn calc_suspension(
 pub fn suspension_system(
     spatial: SpatialQuery,
     mut set: ParamSet<(
-        Query<(&mut LinearVelocity, &GlobalTransform, &Wheel, &ChildOf<Vehicle>)>,
+        Query<(&mut LinearVelocity, &GlobalTransform, &Wheel, &ChildOf)>,
         Query<&mut LinearVelocity, With<Vehicle>>,
     )>,
     tuning: Res<VehicleTuning>,
