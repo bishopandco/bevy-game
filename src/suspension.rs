@@ -1,8 +1,7 @@
 use bevy::prelude::*;
 use avian3d::prelude::*;
 
-use crate::vehicle::{Vehicle, Wheel, VehicleTuning, SuspensionParams};
-use bevy::prelude::Parent;
+use crate::vehicle::{SuspensionParams, Vehicle, VehicleTuning, Wheel};
 
 fn apply_suspension(
     start: Vec3,
@@ -22,13 +21,23 @@ fn apply_suspension(
 
 pub fn suspension_system(
     spatial: SpatialQuery,
-    mut wheels: Query<(&mut LinearVelocity, &GlobalTransform, &Wheel, &Parent)>,
-    mut vehicles: Query<&mut LinearVelocity, With<Vehicle>>,
+    mut set: ParamSet<(
+        Query<(&mut LinearVelocity, &GlobalTransform, &Wheel, &Parent)>,
+        Query<&mut LinearVelocity, With<Vehicle>>,
+    )>,
     tuning: Res<VehicleTuning>,
 ) {
-    for (mut vel, tf, wheel, parent) in &mut wheels {
+    let mut vehicles = set.p1();
+    for (mut vel, tf, wheel, parent) in &mut set.p0() {
         if let Ok(mut car_vel) = vehicles.get_mut(parent.get()) {
-            apply_suspension(tf.translation() + Vec3::Y * wheel.radius, &mut vel, &mut car_vel, &spatial, &tuning.suspension, wheel.radius);
+            apply_suspension(
+                tf.translation() + Vec3::Y * wheel.radius,
+                &mut vel,
+                &mut car_vel,
+                &spatial,
+                &tuning.suspension,
+                wheel.radius,
+            );
         }
     }
 }

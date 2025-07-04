@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use avian3d::prelude::*;
+use std::f32::consts::FRAC_PI_2;
 
 #[derive(Resource, Clone, Copy)]
 pub struct SuspensionParams {
@@ -122,7 +123,8 @@ pub fn spawn_vehicle(
                     drive: true,
                     ..Default::default()
                 },
-                transform: Transform::from_translation(pos + offset),
+                transform: Transform::from_translation(pos + offset)
+                    .with_rotation(Quat::from_rotation_z(FRAC_PI_2)),
                 ..Default::default()
             })
             .id();
