@@ -11,7 +11,9 @@ pub struct SuspensionParams {
 
 impl Default for SuspensionParams {
     fn default() -> Self {
-        Self { spring_k: 300.0, damping_c: 40.0, max_travel: 0.75 }
+        // A slightly stiffer spring helps keep the chassis from bottoming out
+        // under its own weight.
+        Self { spring_k: 800.0, damping_c: 40.0, max_travel: 0.75 }
     }
 }
 
@@ -62,7 +64,9 @@ impl Default for VehicleBundle {
         Self {
             vehicle: Vehicle { drive_mode: DriveMode::Awd },
             rb: RigidBody::Dynamic,
-            collider: Collider::cuboid(1.0, 0.5, 1.5),
+            // A slightly smaller collider keeps the overall mass low so the
+            // suspension can properly support the chassis.
+            collider: Collider::cuboid(0.8, 0.4, 1.2),
             transform: Transform::default(),
             global_transform: GlobalTransform::default(),
         }
@@ -123,8 +127,11 @@ pub fn spawn_vehicle(
                     drive: true,
                     ..Default::default()
                 },
+                // Rotate the wheel so its axis aligns correctly with the
+                // vehicle's forward motion. Without this the wheels appear
+                // flattened against the ground.
                 transform: Transform::from_translation(pos + offset)
-                    .with_rotation(Quat::from_rotation_z(FRAC_PI_2)),
+                    .with_rotation(Quat::from_rotation_z(-FRAC_PI_2)),
                 ..Default::default()
             })
             .id();
