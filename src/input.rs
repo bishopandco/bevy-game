@@ -9,6 +9,7 @@ use bevy::prelude::ChildOf;
 const WHEEL_RAY_LENGTH: f32 = 1.0;
 const SUSPENSION_SMOOTH: f32 = 0.4;
 const LAUNCH_SPEED: f32 = 20.0;
+const SUBSTEPS: u32 = 4;
 
 #[derive(Component, Default)]
 pub struct Player {
@@ -114,41 +115,43 @@ fn car_movement_system(
     spatial: SpatialQuery,
     mut q: Query<(Entity, &mut Transform, &mut Player)>,
 ) {
-    let dt = time.delta_secs();
+    let sub_dt = time.delta_secs() / SUBSTEPS as f32;
     for (entity, mut tf, mut plyr) in &mut q {
-        let yaw_rot = Quat::from_rotation_y(plyr.yaw);
-        let forward = yaw_rot * Vec3::Z;
-        tf.translation += forward * plyr.speed * dt;
+        for _ in 0..SUBSTEPS {
+            let yaw_rot = Quat::from_rotation_y(plyr.yaw);
+            let forward = yaw_rot * Vec3::Z;
+            tf.translation += forward * plyr.speed * sub_dt;
 
-        let hits = wheel_hits(&spatial, entity, &tf, &plyr);
-        if hits.is_empty() {
-            plyr.grounded = false;
-        } else {
-            let avg_y = hits.iter().map(|(p, _)| p.y).sum::<f32>() / hits.len() as f32;
-            let ground_n = hits
-                .iter()
-                .map(|(_, n)| *n)
-                .fold(Vec3::ZERO, |a, b| a + b)
-                .normalize_or_zero();
-            let contact = hits.iter().any(|(p, _)| {
-                (tf.translation.y - plyr.half_extents.y) - p.y <= WHEEL_RAY_LENGTH
-            });
-            if contact && plyr.speed.abs() < LAUNCH_SPEED {
-                plyr.grounded = true;
-                let target_y = avg_y + plyr.half_extents.y;
-                tf.translation.y = tf.translation.y.lerp(target_y, 0.5);
-                plyr.vertical_vel = 0.0;
-                let target_rot = Quat::from_rotation_arc(Vec3::Y, ground_n) * yaw_rot;
-                tf.rotation = tf.rotation.slerp(target_rot, 0.2);
-            } else {
+            let hits = wheel_hits(&spatial, entity, &tf, &plyr);
+            if hits.is_empty() {
                 plyr.grounded = false;
+            } else {
+                let avg_y = hits.iter().map(|(p, _)| p.y).sum::<f32>() / hits.len() as f32;
+                let ground_n = hits
+                    .iter()
+                    .map(|(_, n)| *n)
+                    .fold(Vec3::ZERO, |a, b| a + b)
+                    .normalize_or_zero();
+                let contact = hits.iter().any(|(p, _)| {
+                    (tf.translation.y - plyr.half_extents.y) - p.y <= WHEEL_RAY_LENGTH
+                });
+                if contact && plyr.speed.abs() < LAUNCH_SPEED {
+                    plyr.grounded = true;
+                    let target_y = avg_y + plyr.half_extents.y;
+                    tf.translation.y = tf.translation.y.lerp(target_y, 0.5);
+                    plyr.vertical_vel = 0.0;
+                    let target_rot = Quat::from_rotation_arc(Vec3::Y, ground_n) * yaw_rot;
+                    tf.rotation = tf.rotation.slerp(target_rot, 0.2);
+                } else {
+                    plyr.grounded = false;
+                }
             }
-        }
 
-        if !plyr.grounded {
-            plyr.vertical_vel -= params.gravity * dt;
-            tf.translation.y += plyr.vertical_vel * dt;
-            tf.rotation = Quat::from_rotation_y(plyr.yaw);
+            if !plyr.grounded {
+                plyr.vertical_vel -= params.gravity * sub_dt;
+                tf.translation.y += plyr.vertical_vel * sub_dt;
+                tf.rotation = Quat::from_rotation_y(plyr.yaw);
+            }
         }
     }
 }
