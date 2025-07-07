@@ -174,10 +174,11 @@ fn wheel_update_system(
         if let Ok(vehicle) = vehicles.get(parent.get()) {
             wheel.rotation += vehicle.speed * dt / wheel.radius;
             let steer = if wheel.is_front { vehicle.yaw } else { 0.0 };
+            // keep wheel upright while allowing steering and rolling
             tf.rotation =
                 Quat::from_rotation_y(steer)
-                    * Quat::from_rotation_x(wheel.rotation)
-                    * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2);
+                    * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)
+                    * Quat::from_rotation_x(wheel.rotation);
             let y_off = (elapsed + wheel.phase).sin() * wheel.suspension;
             tf.translation = wheel.rest_offset + Vec3::Y * y_off;
         }
