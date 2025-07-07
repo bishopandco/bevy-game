@@ -215,8 +215,8 @@ fn vehicle_orientation_system(
 fn wheel_update_system(
     time: Res<Time>,
     spatial: SpatialQuery,
-    vehicles: Query<(&Transform, &Vehicle)>,
-    mut wheels: Query<(&ChildOf, &mut Transform, &mut Wheel)>,
+    vehicles: Query<(&Transform, &Vehicle), Without<Wheel>>,
+    mut wheels: Query<(&ChildOf, &mut Transform, &mut Wheel), Without<Vehicle>>,
 ) {
     let dt = time.delta_secs();
     for (parent, mut tf, mut wheel) in &mut wheels {
