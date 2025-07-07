@@ -1,9 +1,9 @@
-use bevy::prelude::*;
-use bevy::ecs::hierarchy::{ChildSpawnerCommands, ChildOf};
-use bevy::math::primitives::Cylinder;
 use avian3d::prelude::*;
+use bevy::ecs::hierarchy::{ChildOf, ChildSpawnerCommands};
+use bevy::math::primitives::Cylinder;
+use bevy::prelude::*;
 
-use crate::globals::{GameParams, Controlled, InVehicle};
+use crate::globals::{Controlled, GameParams, InVehicle};
 use crate::input::Player;
 
 const STEP_HEIGHT: f32 = 0.25;
@@ -13,6 +13,8 @@ const SUBSTEPS: u32 = 4;
 const FALL_RESET_Y: f32 = -100.0;
 const RESPAWN_POS: Vec3 = Vec3::new(0.0, 1.5, 0.0);
 const RESPAWN_YAW: f32 = 0.0;
+const ROT_SMOOTH: f32 = 0.05;
+const VERTICAL_DAMP: f32 = 0.9;
 
 #[derive(Component)]
 pub struct Vehicle {
@@ -48,19 +50,18 @@ pub struct VehiclePlugin;
 
 impl Plugin for VehiclePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_vehicle)
-            .add_systems(
-                Update,
-                (
-                    vehicle_toggle_system,
-                    vehicle_input_system,
-                    vehicle_move_system.after(vehicle_input_system),
-                    vehicle_fall_reset_system,
-                    wheel_update_system.after(vehicle_move_system),
-                    vehicle_orientation_system.after(wheel_update_system),
-                    sync_player_to_vehicle_system,
-                ),
-            );
+        app.add_systems(Startup, spawn_vehicle).add_systems(
+            Update,
+            (
+                vehicle_toggle_system,
+                vehicle_input_system,
+                vehicle_move_system.after(vehicle_input_system),
+                vehicle_fall_reset_system,
+                wheel_update_system.after(vehicle_move_system),
+                vehicle_orientation_system.after(wheel_update_system),
+                sync_player_to_vehicle_system,
+            ),
+        );
     }
 }
 
@@ -169,8 +170,8 @@ fn vehicle_input_system(
         } else if keys.pressed(KeyCode::KeyS) {
             vehicle.speed = (vehicle.speed - params.brake_acceleration * dt).max(-params.max_speed);
         } else {
-            vehicle.speed = vehicle.speed.signum()
-                * (vehicle.speed.abs() - params.friction * dt).max(0.0);
+            vehicle.speed =
+                vehicle.speed.signum() * (vehicle.speed.abs() - params.friction * dt).max(0.0);
         }
 
         if keys.pressed(KeyCode::KeyA) {
@@ -216,14 +217,18 @@ fn vehicle_orientation_system(
             if child.parent() == entity {
                 pts[count] = tf.transform_point(w_tf.translation);
                 count += 1;
-                if count == 4 { break; }
+                if count == 4 {
+                    break;
+                }
             }
         }
 
-        if count == 4 {
-            orient_to_wheels(&mut tf, &vehicle, pts);
-        } else {
-            orient_to_ground(&spatial, entity, &mut tf, &vehicle);
+        if vehicle.grounded {
+            if count == 4 {
+                orient_to_wheels(&mut tf, &vehicle, pts);
+            } else {
+                orient_to_ground(&spatial, entity, &mut tf, &vehicle);
+            }
         }
     }
 }
@@ -239,10 +244,9 @@ fn wheel_update_system(
         if let Ok((veh_tf, vehicle)) = vehicles.get(parent.parent()) {
             wheel.rotation += vehicle.speed * dt / wheel.radius;
             let steer = if wheel.is_front { vehicle.yaw } else { 0.0 };
-            tf.rotation =
-                Quat::from_rotation_y(steer)
-                    * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)
-                    * Quat::from_rotation_x(wheel.rotation);
+            tf.rotation = Quat::from_rotation_y(steer)
+                * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)
+                * Quat::from_rotation_x(wheel.rotation);
 
             let world_rest = veh_tf.transform_point(wheel.rest_offset);
             let filter = SpatialQueryFilter::default().with_excluded_entities([parent.parent()]);
@@ -283,10 +287,11 @@ fn vehicle_toggle_system(
     if !keys.just_pressed(KeyCode::KeyE) {
         return;
     }
-    let (player_ent, mut player_tf, player_comp, in_vehicle, player_ctrl) = match players.single_mut() {
-        Ok(v) => v,
-        Err(_) => return,
-    };
+    let (player_ent, mut player_tf, player_comp, in_vehicle, player_ctrl) =
+        match players.single_mut() {
+            Ok(v) => v,
+            Err(_) => return,
+        };
 
     if player_ctrl.is_some() {
         for (veh_ent, veh_tf, veh_ctrl) in &mut vehicles {
@@ -420,6 +425,8 @@ fn move_vehicle_vertical(
         veh.vertical_vel = 0.0;
     } else {
         veh.vertical_vel -= params.gravity * dt;
+        veh.vertical_vel *= VERTICAL_DAMP;
+        veh.vertical_vel = veh.vertical_vel.clamp(-50.0, 50.0);
     }
     tf.translation.y += veh.vertical_vel * dt;
     resolve_vertical_collision(spatial, entity, col, tf, veh);
@@ -484,7 +491,6 @@ fn orient_to_ground(spatial: &SpatialQuery, entity: Entity, tf: &mut Transform, 
         .unwrap_or(Vec3::Y);
     let yaw_rot = Quat::from_rotation_y(veh.yaw);
     let target = Quat::from_rotation_arc(Vec3::Y, ground_n) * yaw_rot;
-    const ROT_SMOOTH: f32 = 0.2;
     tf.rotation = tf.rotation.slerp(target, ROT_SMOOTH);
 }
 
@@ -500,7 +506,6 @@ fn orient_to_wheels(tf: &mut Transform, veh: &Vehicle, pts: [Vec3; 4]) {
 
     let yaw_rot = Quat::from_rotation_y(veh.yaw);
     let target = Quat::from_rotation_arc(Vec3::Y, normal) * yaw_rot;
-    const ROT_SMOOTH: f32 = 0.2;
     tf.rotation = tf.rotation.slerp(target, ROT_SMOOTH);
 }
 
