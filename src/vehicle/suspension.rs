@@ -63,10 +63,15 @@ pub fn spawn_arm(
 
 pub fn suspension_system(
     params: Res<SuspensionParams>,
-    mut arms: Query<(&Transform, &mut ExternalForce, &LinearVelocity), With<SuspensionArm>>,
+    mut arms: Query<
+        (&Transform, &mut ExternalForce, &LinearVelocity),
+        (With<SuspensionArm>, Without<Chassis>),
+    >,
     mut ch_q: Query<(&Transform, &mut ExternalForce, &LinearVelocity), With<Chassis>>,
 ) {
-    let Ok((ct, mut cf, cv)) = ch_q.single_mut() else { return; };
+    let Ok((ct, mut cf, cv)) = ch_q.single_mut() else {
+        return;
+    };
     let axis = ct.rotation * Vec3::Y;
     for (tf, mut ext_f, vel) in &mut arms {
         let d = (tf.translation - ct.translation).dot(axis);
