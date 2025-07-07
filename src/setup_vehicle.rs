@@ -31,12 +31,15 @@ pub fn spawn_vehicle_from_config(
 
     commands.insert_resource(AntiRollBar(cfg.anti_roll_stiffness));
 
+    let mut ext_force = ExternalForce::default();
+    ext_force.persistent = false;
+
     let chassis = commands
         .spawn((
             Transform::default(),
             GlobalTransform::default(),
             RigidBody::Dynamic,
-            ExternalForce { persistent: false, ..Default::default() },
+            ext_force,
             Collider::cuboid(1.0, 0.5, 2.0),
             Vehicle::default(),
             Chassis {
