@@ -1,5 +1,6 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
+use bevy::math::primitives::Cylinder;
 
 use super::chassis::Chassis;
 
@@ -38,12 +39,18 @@ impl Plugin for SuspensionPlugin {
 /// Spawn a suspension arm entity attached to the given chassis.
 pub fn spawn_arm(
     commands: &mut Commands,
+    meshes: &mut Assets<Mesh>,
+    materials: &mut Assets<StandardMaterial>,
     chassis: Entity,
     offset: Vec3,
     params: &SuspensionParams,
 ) -> Entity {
+    let mesh = meshes.add(Cylinder::new(0.1, params.max_travel * 2.0));
+    let material = materials.add(Color::srgb(0.2, 0.2, 0.2));
     let arm = commands
         .spawn((
+            Mesh3d(mesh),
+            MeshMaterial3d(material),
             RigidBody::Dynamic,
             Mass(0.0),
             Transform::from_translation(offset),
