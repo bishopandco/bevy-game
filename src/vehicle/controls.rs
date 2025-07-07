@@ -6,14 +6,20 @@ pub enum DriveMode { Fwd, Rwd, Awd }
 
 /// Commanded throttle, steering and handbrake state.
 #[derive(Resource, Default)]
-pub struct DriveCmd { pub throttle: f32, pub steer: f32, pub handbrake: bool }
+pub struct DriveCmd {
+    pub throttle: f32,
+    pub steer: f32,
+    pub handbrake: bool,
+}
 
 /// Handles keyboard input and updates [`DriveCmd`].
 pub struct VehicleControlsPlugin;
 
 impl Plugin for VehicleControlsPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(DriveCmd::default()).insert_resource(DriveMode::Awd).add_systems(Update, read_input);
+        app.insert_resource(DriveCmd::default())
+            .insert_resource(DriveMode::Awd)
+            .add_systems(Update, read_input);
     }
 }
 
