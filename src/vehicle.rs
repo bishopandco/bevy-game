@@ -142,10 +142,10 @@ fn vehicle_input_system(
         }
 
         if keys.pressed(KeyCode::KeyA) {
-            vehicle.yaw += params.yaw_rate * dt;
+            vehicle.yaw -= params.yaw_rate * dt;
         }
         if keys.pressed(KeyCode::KeyD) {
-            vehicle.yaw -= params.yaw_rate * dt;
+            vehicle.yaw += params.yaw_rate * dt;
         }
     }
 }
@@ -175,11 +175,11 @@ fn wheel_update_system(
             wheel.rotation += vehicle.speed * dt / wheel.radius;
             let steer = if wheel.is_front { vehicle.yaw } else { 0.0 };
             // keep wheel upright while allowing steering and rolling
-            // spin the wheel around its local X-axis after applying steering
+            // steer around world Y then spin around local X
             tf.rotation =
-                Quat::from_rotation_x(wheel.rotation)
-                    * Quat::from_rotation_y(steer)
-                    * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2);
+                Quat::from_rotation_y(steer)
+                    * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)
+                    * Quat::from_rotation_x(wheel.rotation);
             let y_off = (elapsed + wheel.phase).sin() * wheel.suspension;
             tf.translation = wheel.rest_offset + Vec3::Y * y_off;
         }
