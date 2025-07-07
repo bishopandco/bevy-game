@@ -113,11 +113,7 @@ fn spawn_wheel(
     parent
         .spawn(Mesh3d(mesh))
         .insert(MeshMaterial3d(material))
-        .insert({
-            let mut tf = Transform::from_translation(offset);
-            tf.rotation = Quat::from_rotation_z(std::f32::consts::FRAC_PI_2);
-            tf
-        })
+        .insert(Transform::from_translation(offset))
         .insert(Wheel {
             is_front,
             radius: WHEEL_RADIUS,
@@ -178,7 +174,10 @@ fn wheel_update_system(
         if let Ok(vehicle) = vehicles.get(parent.get()) {
             wheel.rotation += vehicle.speed * dt / wheel.radius;
             let steer = if wheel.is_front { vehicle.yaw } else { 0.0 };
-            tf.rotation = Quat::from_rotation_y(steer) * Quat::from_rotation_x(wheel.rotation);
+            tf.rotation =
+                Quat::from_rotation_y(steer)
+                    * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)
+                    * Quat::from_rotation_x(wheel.rotation);
             let y_off = (elapsed + wheel.phase).sin() * wheel.suspension;
             tf.translation = wheel.rest_offset + Vec3::Y * y_off;
         }
@@ -188,8 +187,14 @@ fn wheel_update_system(
 fn vehicle_toggle_system(
     keys: Res<ButtonInput<KeyCode>>,
     mut commands: Commands,
-    mut players: Query<(Entity, &mut Transform, Option<&InVehicle>, Option<&Controlled>), With<Player>>,
-    mut vehicles: Query<(Entity, &Transform, Option<&Controlled>), With<Vehicle>>,
+    mut players: Query<
+        (Entity, &mut Transform, Option<&InVehicle>, Option<&Controlled>),
+        (With<Player>, Without<Vehicle>),
+    >,
+    mut vehicles: Query<
+        (Entity, &Transform, Option<&Controlled>),
+        (With<Vehicle>, Without<Player>),
+    >,
 ) {
     if !keys.just_pressed(KeyCode::KeyE) {
         return;

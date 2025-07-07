@@ -1,5 +1,5 @@
 use crate::globals::GameParams;
-use crate::globals::{Controlled, InVehicle};
+use crate::globals::Controlled;
 use avian3d::prelude::*;
 use bevy::{
     input::{keyboard::KeyCode, ButtonInput},
