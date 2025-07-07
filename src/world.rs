@@ -55,5 +55,6 @@ fn setup_world(
             grounded: false,
             fire_timer: 0.0,
             weapon_energy: 1.0,
+            vehicle: None,
         });
 }

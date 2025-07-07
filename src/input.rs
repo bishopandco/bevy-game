@@ -26,6 +26,8 @@ pub struct Player {
     pub grounded: bool,
     pub fire_timer: f32,
     pub weapon_energy: f32,
+    /// Vehicle this player is riding in.
+    pub vehicle: Option<Entity>,
 }
 
 pub struct PlayerControlPlugin;
@@ -51,6 +53,9 @@ fn player_input_system(
 ) {
     let dt = time.delta_secs();
     for mut plyr in &mut q {
+        if plyr.vehicle.is_some() {
+            continue;
+        }
         update_speed(&keys, &params, &mut plyr, dt);
         update_yaw(&keys, &params, &mut plyr, dt);
     }
@@ -64,6 +69,9 @@ fn player_move_system(
 ) {
     let dt = time.delta_secs() / SUBSTEPS as f32;
     for (entity, mut tf, mut plyr) in &mut q {
+        if plyr.vehicle.is_some() {
+            continue;
+        }
         let col = Collider::cuboid(
             plyr.half_extents.x,
             plyr.half_extents.y,
@@ -81,6 +89,9 @@ fn player_orientation_system(
     mut q: Query<(Entity, &mut Transform, &mut Player)>,
 ) {
     for (entity, mut tf, mut plyr) in &mut q {
+        if plyr.vehicle.is_some() {
+            continue;
+        }
         apply_ground_snap(&spatial, entity, &mut tf, &mut plyr);
         orient_to_ground(&spatial, entity, &mut tf, &plyr);
     }
@@ -263,6 +274,9 @@ fn orient_to_ground(spatial: &SpatialQuery, entity: Entity, tf: &mut Transform, 
 
 fn fall_reset_system(mut q: Query<(&mut Transform, &mut Player)>) {
     for (mut tf, mut plyr) in &mut q {
+        if plyr.vehicle.is_some() {
+            continue;
+        }
         if tf.translation.y < FALL_RESET_Y {
             info!("respawn");
             tf.translation = RESPAWN_POS;
