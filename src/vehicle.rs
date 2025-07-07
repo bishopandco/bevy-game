@@ -10,6 +10,7 @@ use crate::input::Player;
 pub struct Vehicle {
     pub speed: f32,
     pub yaw: f32,
+    pub steer: f32,
 }
 
 #[derive(Component)]
@@ -47,6 +48,7 @@ const REAR_AXLE_Z: f32 = -1.5;
 const AXLE_X: f32 = 1.0;
 const SUSPENSION_TRAVEL: f32 = 0.2;
 const ENTER_DISTANCE: f32 = 2.0;
+const MAX_STEER: f32 = std::f32::consts::FRAC_PI_4;
 
 fn spawn_vehicle(
     mut commands: Commands,
@@ -141,11 +143,14 @@ fn vehicle_input_system(
                 * (vehicle.speed.abs() - params.friction * dt).max(0.0);
         }
 
+        vehicle.steer = 0.0;
         if keys.pressed(KeyCode::KeyA) {
             vehicle.yaw -= params.yaw_rate * dt;
+            vehicle.steer = -MAX_STEER;
         }
         if keys.pressed(KeyCode::KeyD) {
             vehicle.yaw += params.yaw_rate * dt;
+            vehicle.steer = MAX_STEER;
         }
     }
 }
@@ -173,13 +178,13 @@ fn wheel_update_system(
     for (parent, mut tf, mut wheel) in &mut wheels {
         if let Ok(vehicle) = vehicles.get(parent.parent()) {
             wheel.rotation += vehicle.speed * dt / wheel.radius;
-            let steer = if wheel.is_front { vehicle.yaw } else { 0.0 };
+            let steer = if wheel.is_front { vehicle.steer } else { 0.0 };
             // keep wheel upright while allowing steering and rolling
-            // steer around world Y then spin around local X
+            // align wheel mesh then apply spin and steering
             tf.rotation =
                 Quat::from_rotation_y(steer)
-                    * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)
-                    * Quat::from_rotation_x(wheel.rotation);
+                    * Quat::from_rotation_x(wheel.rotation)
+                    * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2);
             let y_off = (elapsed + wheel.phase).sin() * wheel.suspension;
             tf.translation = wheel.rest_offset + Vec3::Y * y_off;
         }
