@@ -176,8 +176,8 @@ fn wheel_update_system(
             let steer = if wheel.is_front { vehicle.yaw } else { 0.0 };
             tf.rotation =
                 Quat::from_rotation_y(steer)
-                    * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)
-                    * Quat::from_rotation_x(wheel.rotation);
+                    * Quat::from_rotation_x(wheel.rotation)
+                    * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2);
             let y_off = (elapsed + wheel.phase).sin() * wheel.suspension;
             tf.translation = wheel.rest_offset + Vec3::Y * y_off;
         }
@@ -232,8 +232,8 @@ fn vehicle_toggle_system(
 }
 
 fn sync_player_to_vehicle_system(
-    mut players: Query<(&mut Transform, &InVehicle)>,
-    vehicles: Query<&Transform, With<Vehicle>>,
+    mut players: Query<(&mut Transform, &InVehicle), Without<Vehicle>>,
+    vehicles: Query<&Transform, (With<Vehicle>, Without<Player>)>,
 ) {
     for (mut tf, iv) in &mut players {
         if let Ok(v_tf) = vehicles.get(iv.vehicle) {
