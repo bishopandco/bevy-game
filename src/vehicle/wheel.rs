@@ -23,14 +23,14 @@ fn spawn_vehicle_wheels(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    chassis_q: Query<Entity, With<Chassis>>,
+    chassis_q: Query<(Entity, &Transform), With<Chassis>>,
     wheel_q: Query<(), With<Wheel>>,
     params: Res<super::suspension::SuspensionParams>,
 ) {
     if !wheel_q.is_empty() {
         return;
     }
-    let Ok(chassis) = chassis_q.single() else {
+    let Ok((chassis, ch_tf)) = chassis_q.single() else {
         return;
     };
     let offs = [
@@ -45,15 +45,17 @@ fn spawn_vehicle_wheels(
             meshes.as_mut(),
             materials.as_mut(),
             chassis,
+            ch_tf,
             o,
             &params,
         );
+        let pos = ch_tf.translation + o;
         spawn_wheel(
             &mut commands,
             meshes.as_mut(),
             materials.as_mut(),
             arm,
-            o,
+            pos,
             i < 2,
         );
     }
@@ -65,7 +67,7 @@ pub fn spawn_wheel(
     meshes: &mut Assets<Mesh>,
     materials: &mut Assets<StandardMaterial>,
     arm: Entity,
-    offset: Vec3,
+    pos: Vec3,
     front: bool,
 ) -> Entity {
     let rot = Quat::from_rotation_z(std::f32::consts::FRAC_PI_2);
@@ -79,7 +81,7 @@ pub fn spawn_wheel(
             Collider::cylinder(0.75, 0.15),
             Mass(10.0),
             {
-                let mut tf = Transform::from_translation(offset);
+                let mut tf = Transform::from_translation(pos);
                 tf.rotation = rot;
                 tf
             },
