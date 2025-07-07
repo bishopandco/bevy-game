@@ -41,7 +41,11 @@ pub fn spawn_chassis(
         ))
         .id();
     commands.entity(chassis).add_child(p_ent);
-    commands.entity(p_ent).insert(Transform::from_xyz(0.0, 1.0, 0.0));
+    commands
+        .entity(p_ent)
+        .insert(Transform::from_xyz(0.0, 1.0, 0.0))
+        .remove::<RigidBody>()
+        .remove::<Collider>();
     player.vehicle = Some(chassis);
 }
 

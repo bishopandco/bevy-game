@@ -16,7 +16,7 @@ impl Plugin for CameraPlugin {
 
 fn setup_camera(
     mut commands: Commands,
-    player_q: Query<&Transform, With<Player>>,
+    player_q: Query<&GlobalTransform, With<Player>>,
     cam_q: Query<(), With<FollowCamera>>,
     params: Res<GameParams>,
 ) {
@@ -25,6 +25,7 @@ fn setup_camera(
     }
 
     if let Ok(player_tf) = player_q.single() {
+        let player_tf = player_tf.compute_transform();
         let forward = player_tf.rotation * Vec3::Z;
         let cam_pos =
             player_tf.translation - forward * params.cam_distance + Vec3::Y * params.cam_height;
@@ -40,11 +41,13 @@ fn setup_camera(
 fn follow_camera_system(
     params: Res<GameParams>,
     mut cam_q: Query<&mut Transform, With<FollowCamera>>,
-    target_q: Query<&Transform, (With<Player>, Without<FollowCamera>)>,
+    target_q: Query<&GlobalTransform, (With<Player>, Without<FollowCamera>)>,
 ) {
     let Ok(target_tf) = target_q.single() else {
         return;
     };
+
+    let target_tf = target_tf.compute_transform();
 
     for mut cam_tf in &mut cam_q {
         let forward = target_tf.rotation * Vec3::Z;

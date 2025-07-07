@@ -45,6 +45,7 @@ fn spawn_vehicle_wheels(
             meshes.as_mut(),
             materials.as_mut(),
             arm,
+            o,
             i < 2,
         );
     }
@@ -56,6 +57,7 @@ pub fn spawn_wheel(
     meshes: &mut Assets<Mesh>,
     materials: &mut Assets<StandardMaterial>,
     arm: Entity,
+    offset: Vec3,
     front: bool,
 ) -> Entity {
     let rot = Quat::from_rotation_z(std::f32::consts::FRAC_PI_2);
@@ -68,7 +70,11 @@ pub fn spawn_wheel(
             RigidBody::Dynamic,
             Collider::cylinder(0.75, 0.15),
             Mass(10.0),
-            Transform::from_rotation(rot),
+            {
+                let mut tf = Transform::from_translation(offset);
+                tf.rotation = rot;
+                tf
+            },
             ExternalForce::default().with_persistence(false),
             ExternalTorque::default().with_persistence(false),
             Wheel { front },
