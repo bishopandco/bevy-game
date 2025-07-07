@@ -11,7 +11,7 @@ pub struct ChassisPlugin;
 
 impl Plugin for ChassisPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (spawn_chassis, drive_chassis_system));
+        app.add_systems(Update, spawn_chassis);
     }
 }
 
@@ -53,13 +53,4 @@ pub fn spawn_chassis(
     player.vehicle = Some(chassis);
 }
 
-fn drive_chassis_system(
-    cmd: Res<DriveCmd>,
-    mut q: Query<(&Transform, &mut ExternalForce), With<Chassis>>,
-) {
-    let Ok((tf, mut force)) = q.single_mut() else {
-        return;
-    };
-    let forward = tf.rotation * Vec3::Z;
-    force.apply_force(forward * cmd.throttle * 2_000.0);
-}
+// Driving forces are applied directly to the wheels now.

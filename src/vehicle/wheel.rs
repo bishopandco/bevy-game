@@ -15,7 +15,7 @@ pub struct WheelPlugin;
 
 impl Plugin for WheelPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (spawn_vehicle_wheels, steer_system));
+        app.add_systems(Update, (spawn_vehicle_wheels, steer_system, drive_system));
     }
 }
 
@@ -69,6 +69,18 @@ fn steer_system(cmd: Res<super::controls::DriveCmd>, mut q: Query<(&WheelHub, &m
         if hub.front {
             tf.rotation = Quat::from_rotation_y(cmd.steer * 0.5);
         }
+    }
+}
+
+/// Apply drive torque based on user input.
+fn drive_system(
+    cmd: Res<super::controls::DriveCmd>,
+    mut q: Query<(&mut ExternalTorque, &Transform), With<Wheel>>,
+) {
+    let torque = cmd.throttle * 5_000.0;
+    for (mut t, tf) in &mut q {
+        let axis = tf.rotation * Vec3::X;
+        t.apply_torque(axis * torque);
     }
 }
 

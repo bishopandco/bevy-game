@@ -92,7 +92,7 @@ pub fn suspension_system(
     let Ok((ct, mut cf, cv)) = ch_q.single_mut() else {
         return;
     };
-    let axis = ct.rotation * Vec3::Y;
+    let axis = Vec3::Y;
     for (hub, tf, mut ext_f, vel) in &mut hubs {
         let rest = ct.translation + hub.offset;
         let d = (tf.translation - rest).dot(axis);
