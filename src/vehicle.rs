@@ -46,7 +46,6 @@ const FRONT_AXLE_Z: f32 = 1.5;
 const REAR_AXLE_Z: f32 = -1.5;
 const AXLE_X: f32 = 1.0;
 const SUSPENSION_TRAVEL: f32 = 0.2;
-const WHEEL_ORIENT: Quat = Quat::from_rotation_z(std::f32::consts::FRAC_PI_2);
 const ENTER_DISTANCE: f32 = 2.0;
 
 fn spawn_vehicle(
@@ -116,7 +115,7 @@ fn spawn_wheel(
         .insert(MeshMaterial3d(material))
         .insert({
             let mut tf = Transform::from_translation(offset);
-            tf.rotation = WHEEL_ORIENT;
+            tf.rotation = Quat::from_rotation_z(std::f32::consts::FRAC_PI_2);
             tf
         })
         .insert(Wheel {
