@@ -29,16 +29,16 @@ fn setup_world(
         .insert(RigidBody::Static);
 
     commands.insert_resource(AmbientLight {
-        brightness: 0.5,
+        brightness: 1000.0,
         ..default()
     });
-    commands
-        .spawn(DirectionalLight {
-            illuminance: 3_000.0,
-            shadows_enabled: true,
-            ..default()
-        })
-        .insert(Transform::from_xyz(5.0, 10.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y));
+    // commands
+    //     .spawn(DirectionalLight {
+    //         illuminance: 3_000.0,
+    //         shadows_enabled: true,
+    //         ..default()
+    //     })
+    //     .insert(Transform::from_xyz(5.0, 10.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y));
 
     let mesh = meshes.add(Cuboid::new(0.25, 0.25, 0.25));
     commands
