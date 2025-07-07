@@ -56,8 +56,8 @@ impl Plugin for VehiclePlugin {
                     vehicle_input_system,
                     vehicle_move_system.after(vehicle_input_system),
                     vehicle_fall_reset_system,
-                    vehicle_orientation_system.after(vehicle_move_system),
-                    wheel_update_system.after(vehicle_orientation_system),
+                    wheel_update_system.after(vehicle_move_system),
+                    vehicle_orientation_system.after(wheel_update_system),
                     sync_player_to_vehicle_system,
                 ),
             );
@@ -204,11 +204,27 @@ fn vehicle_move_system(
 
 fn vehicle_orientation_system(
     spatial: SpatialQuery,
+    wheels: Query<(&ChildOf, &Transform), With<Wheel>>,
     mut q: Query<(Entity, &mut Transform, &mut Vehicle), With<Controlled>>,
 ) {
     for (entity, mut tf, mut vehicle) in &mut q {
         apply_ground_snap(&spatial, entity, &mut tf, &mut vehicle);
-        orient_to_ground(&spatial, entity, &mut tf, &vehicle);
+
+        let mut pts = [Vec3::ZERO; 4];
+        let mut count = 0;
+        for (child, w_tf) in &wheels {
+            if child.parent() == entity {
+                pts[count] = tf.transform_point(w_tf.translation);
+                count += 1;
+                if count == 4 { break; }
+            }
+        }
+
+        if count == 4 {
+            orient_to_wheels(&mut tf, &vehicle, pts);
+        } else {
+            orient_to_ground(&spatial, entity, &mut tf, &vehicle);
+        }
     }
 }
 
@@ -468,6 +484,22 @@ fn orient_to_ground(spatial: &SpatialQuery, entity: Entity, tf: &mut Transform, 
         .unwrap_or(Vec3::Y);
     let yaw_rot = Quat::from_rotation_y(veh.yaw);
     let target = Quat::from_rotation_arc(Vec3::Y, ground_n) * yaw_rot;
+    const ROT_SMOOTH: f32 = 0.2;
+    tf.rotation = tf.rotation.slerp(target, ROT_SMOOTH);
+}
+
+fn orient_to_wheels(tf: &mut Transform, veh: &Vehicle, pts: [Vec3; 4]) {
+    let front_center = (pts[0] + pts[1]) * 0.5;
+    let rear_center = (pts[2] + pts[3]) * 0.5;
+    let left_center = (pts[0] + pts[2]) * 0.5;
+    let right_center = (pts[1] + pts[3]) * 0.5;
+
+    let forward = front_center - rear_center;
+    let right = right_center - left_center;
+    let normal = forward.cross(right).normalize_or_zero();
+
+    let yaw_rot = Quat::from_rotation_y(veh.yaw);
+    let target = Quat::from_rotation_arc(Vec3::Y, normal) * yaw_rot;
     const ROT_SMOOTH: f32 = 0.2;
     tf.rotation = tf.rotation.slerp(target, ROT_SMOOTH);
 }
