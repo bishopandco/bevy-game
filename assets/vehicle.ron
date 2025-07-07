@@ -1,7 +1,7 @@
 (
     chassis: (
         mass: 1200.0,
-        com_offset: [0.0, -0.5, 0.0],
+        com_offset: (0.0, -0.5, 0.0),
         pitch_roll_smoothing: 0.2,
     ),
     wheels: [
