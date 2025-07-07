@@ -1,7 +1,7 @@
+use super::controls::DriveCmd;
+use crate::input::Player;
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use crate::input::Player;
-use super::controls::DriveCmd;
 
 /// Marker for the vehicle chassis.
 #[derive(Component)]
@@ -11,8 +11,7 @@ pub struct ChassisPlugin;
 
 impl Plugin for ChassisPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_chassis)
-            .add_systems(Update, drive_chassis_system);
+        app.add_systems(Update, (spawn_chassis, drive_chassis_system));
     }
 }
 
@@ -23,7 +22,12 @@ pub fn spawn_chassis(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut players: Query<(Entity, &Transform, &mut Player)>,
 ) {
-    let Ok((p_ent, p_tf, mut player)) = players.single_mut() else { return; };
+    let Ok((p_ent, p_tf, mut player)) = players.single_mut() else {
+        return;
+    };
+    if player.vehicle.is_some() {
+        return;
+    }
     let mesh = meshes.add(Cuboid::new(1.0, 0.5, 2.0));
     let material = materials.add(Color::srgb(0.3, 0.3, 0.35));
     let chassis = commands
@@ -53,7 +57,9 @@ fn drive_chassis_system(
     cmd: Res<DriveCmd>,
     mut q: Query<(&Transform, &mut ExternalForce), With<Chassis>>,
 ) {
-    let Ok((tf, mut force)) = q.single_mut() else { return; };
+    let Ok((tf, mut force)) = q.single_mut() else {
+        return;
+    };
     let forward = tf.rotation * Vec3::Z;
     force.apply_force(forward * cmd.throttle * 2_000.0);
 }
