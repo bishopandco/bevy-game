@@ -1,8 +1,13 @@
 use bevy::prelude::*;
-use bevy::ecs::hierarchy::ChildSpawnerCommands;
-use bevy::math::primitives::Cylinder;
-use rand::Rng;
+use bevy_common_assets::ron::RonAssetPlugin;
 
+mod components;
+mod systems;
+mod setup_vehicle;
+
+use components::*;
+use systems::*;
+use setup_vehicle::*;
 use crate::globals::{GameParams, Controlled, InVehicle};
 use crate::input::Player;
 
@@ -27,15 +32,24 @@ pub struct VehiclePlugin;
 
 impl Plugin for VehiclePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_vehicle)
+        app.add_plugins(RonAssetPlugin::<VehicleConfig>::new(&["ron"]))
+            .add_systems(Startup, load_vehicle_config)
+            .add_systems(Update, spawn_vehicle_from_config)
             .add_systems(
                 Update,
                 (
                     vehicle_toggle_system,
                     vehicle_input_system,
                     vehicle_move_system.after(vehicle_input_system),
-                    wheel_update_system.after(vehicle_move_system),
                     sync_player_to_vehicle_system,
+                ),
+            )
+            .add_systems(
+                FixedUpdate,
+                (
+                    drive_suspension,
+                    update_chassis_pose.after(drive_suspension),
+                    sync_wheel_meshes.after(update_chassis_pose),
                 ),
             );
     }
