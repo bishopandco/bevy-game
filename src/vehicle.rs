@@ -205,7 +205,7 @@ fn vehicle_move_system(
 fn vehicle_orientation_system(
     spatial: SpatialQuery,
     wheels: Query<(&ChildOf, &Transform), With<Wheel>>,
-    mut q: Query<(Entity, &mut Transform, &mut Vehicle), With<Controlled>>,
+    mut q: Query<(Entity, &mut Transform, &mut Vehicle), (With<Controlled>, Without<Wheel>)>,
 ) {
     for (entity, mut tf, mut vehicle) in &mut q {
         apply_ground_snap(&spatial, entity, &mut tf, &mut vehicle);
