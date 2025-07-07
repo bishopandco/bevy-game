@@ -250,7 +250,13 @@ fn vehicle_toggle_system(
     keys: Res<ButtonInput<KeyCode>>,
     mut commands: Commands,
     mut players: Query<
-        (Entity, &mut Transform, Option<&InVehicle>, Option<&Controlled>),
+        (
+            Entity,
+            &mut Transform,
+            &Player,
+            Option<&InVehicle>,
+            Option<&Controlled>,
+        ),
         (With<Player>, Without<Vehicle>),
     >,
     mut vehicles: Query<
@@ -261,7 +267,7 @@ fn vehicle_toggle_system(
     if !keys.just_pressed(KeyCode::KeyE) {
         return;
     }
-    let (player_ent, mut player_tf, in_vehicle, player_ctrl) = match players.single_mut() {
+    let (player_ent, mut player_tf, player_comp, in_vehicle, player_ctrl) = match players.single_mut() {
         Ok(v) => v,
         Err(_) => return,
     };
@@ -272,8 +278,12 @@ fn vehicle_toggle_system(
                 continue;
             }
             if player_tf.translation.distance(veh_tf.translation) < ENTER_DISTANCE {
-                commands.entity(player_ent)
+                commands
+                    .entity(player_ent)
                     .remove::<Controlled>()
+                    .remove::<RigidBody>()
+                    .remove::<Collider>()
+                    .remove::<LinearVelocity>()
                     .insert(InVehicle { vehicle: veh_ent })
                     .insert(Visibility::Hidden);
                 commands.entity(veh_ent).insert(Controlled);
@@ -283,8 +293,16 @@ fn vehicle_toggle_system(
         }
     } else if let Some(occupy) = in_vehicle {
         if let Ok((veh_ent, veh_tf, _)) = vehicles.get(occupy.vehicle) {
-            commands.entity(player_ent)
+            commands
+                .entity(player_ent)
                 .insert(Controlled)
+                .insert(RigidBody::Kinematic)
+                .insert(Collider::cuboid(
+                    player_comp.half_extents.x,
+                    player_comp.half_extents.y,
+                    player_comp.half_extents.z,
+                ))
+                .insert(LinearVelocity::ZERO)
                 .remove::<InVehicle>()
                 .insert(Visibility::Visible);
             commands.entity(veh_ent).remove::<Controlled>();
