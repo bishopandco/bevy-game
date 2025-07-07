@@ -215,10 +215,14 @@ fn vehicle_orientation_system(
 fn wheel_update_system(
     time: Res<Time>,
     spatial: SpatialQuery,
-    vehicles: Query<(&Transform, &Vehicle)>,
-    mut wheels: Query<(&ChildOf, &mut Transform, &mut Wheel)>,
+    mut sets: ParamSet<(
+        Query<(&Transform, &Vehicle)>,
+        Query<(&ChildOf, &mut Transform, &mut Wheel)>,
+    )>,
 ) {
     let dt = time.delta_secs();
+    let vehicles = sets.p0();
+    let mut wheels = sets.p1();
     for (parent, mut tf, mut wheel) in &mut wheels {
         if let Ok((veh_tf, vehicle)) = vehicles.get(parent.parent()) {
             wheel.rotation += vehicle.speed * dt / wheel.radius;
