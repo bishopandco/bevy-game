@@ -14,10 +14,19 @@ pub fn drive_suspension(
     let dt = time.delta_secs();
     let Ok((chassis_tf, mut force, chassis_ent, chassis)) = chassis_q.single_mut() else { return; };
 
-    struct AxleData { left: Option<(Vec3, f32)>, right: Option<(Vec3, f32)> }
+    struct AxleData {
+        left: Option<(Vec3, f32)>,
+        right: Option<(Vec3, f32)>,
+    }
     let mut axles = [
-        AxleData { left: None, right: None },
-        AxleData { left: None, right: None },
+        AxleData {
+            left: None,
+            right: None,
+        },
+        AxleData {
+            left: None,
+            right: None,
+        },
     ];
 
     for (wheel, mut state) in &mut wheels {
@@ -47,15 +56,15 @@ pub fn drive_suspension(
 
         let index = wheel.anti_roll_group as usize;
         if wheel.local_pos.x >= 0.0 {
-            axles[index][0] = Some((point, state.compression));
+            axles[index].left = Some((point, state.compression));
         } else {
-            axles[index][1] = Some((point, state.compression));
+            axles[index].right = Some((point, state.compression));
         }
     }
 
     if let Some(ar) = anti_roll {
         for (i, axle) in axles.into_iter().enumerate() {
-            if let (Some((lp, lc)), Some((rp, rc))) = (axle[0], axle[1]) {
+            if let (Some((lp, lc)), Some((rp, rc))) = (axle.left, axle.right) {
                 let diff = lc - rc;
                 let roll_force = diff * ar.0[i];
                 let down = -(chassis_tf.rotation * Vec3::Y);
