@@ -144,11 +144,11 @@ fn vehicle_input_system(
         }
 
         vehicle.steer = 0.0;
-        if keys.pressed(KeyCode::KeyA) {
+        if keys.pressed(KeyCode::KeyD) {
             vehicle.yaw -= params.yaw_rate * dt;
             vehicle.steer = -MAX_STEER;
         }
-        if keys.pressed(KeyCode::KeyD) {
+        if keys.pressed(KeyCode::KeyA) {
             vehicle.yaw += params.yaw_rate * dt;
             vehicle.steer = MAX_STEER;
         }
