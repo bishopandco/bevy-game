@@ -34,7 +34,7 @@ pub fn spawn_chassis(
             Chassis,
         ))
         .id();
-    commands.entity(chassis).push_children(&[p_ent]);
+    commands.entity(chassis).add_child(p_ent);
     commands.entity(p_ent).insert(Transform::from_xyz(0.0, 1.0, 0.0));
     player.vehicle = Some(chassis);
 }
