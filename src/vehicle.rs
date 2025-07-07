@@ -1,8 +1,9 @@
 use bevy::prelude::*;
-use bevy::ecs::hierarchy::ChildSpawnerCommands;
-use bevy::math::primitives::Cylinder;
-use rand::Rng;
+use bevy_common_assets::ron::RonAssetPlugin;
 
+use crate::components::*;
+use crate::systems::*;
+use crate::setup_vehicle::*;
 use crate::globals::{GameParams, Controlled, InVehicle};
 use crate::input::Player;
 
@@ -27,29 +28,45 @@ pub struct VehiclePlugin;
 
 impl Plugin for VehiclePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_vehicle)
+        app.add_plugins(RonAssetPlugin::<VehicleConfig>::new(&["ron"]))
+            .add_systems(Startup, load_vehicle_config)
+            .add_systems(Update, spawn_vehicle_from_config)
             .add_systems(
                 Update,
                 (
                     vehicle_toggle_system,
                     vehicle_input_system,
                     vehicle_move_system.after(vehicle_input_system),
-                    wheel_update_system.after(vehicle_move_system),
                     sync_player_to_vehicle_system,
+                ),
+            )
+            .add_systems(
+                FixedUpdate,
+                (
+                    drive_suspension,
+                    update_chassis_pose.after(drive_suspension),
+                    sync_wheel_meshes.after(update_chassis_pose),
                 ),
             );
     }
 }
 
+#[allow(dead_code)]
 const WHEEL_RADIUS: f32 = 0.5;
+#[allow(dead_code)]
 const WHEEL_WIDTH: f32 = 0.3;
+#[allow(dead_code)]
 const FRONT_AXLE_Z: f32 = 1.5;
+#[allow(dead_code)]
 const REAR_AXLE_Z: f32 = -1.5;
+#[allow(dead_code)]
 const AXLE_X: f32 = 1.0;
+#[allow(dead_code)]
 const SUSPENSION_TRAVEL: f32 = 0.2;
 const ENTER_DISTANCE: f32 = 2.0;
 const MAX_STEER: f32 = std::f32::consts::FRAC_PI_4;
 
+#[allow(dead_code)]
 fn spawn_vehicle(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -105,6 +122,7 @@ fn spawn_vehicle(
     });
 }
 
+#[allow(dead_code)]
 fn spawn_wheel(
     parent: &mut ChildSpawnerCommands,
     mesh: Handle<Mesh>,
@@ -168,6 +186,7 @@ fn vehicle_move_system(
     }
 }
 
+#[allow(dead_code)]
 fn wheel_update_system(
     time: Res<Time>,
     vehicles: Query<&Vehicle>,
