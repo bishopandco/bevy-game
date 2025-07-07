@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
-
+use rand::Rng;
 use crate::components::*;
 use crate::systems::*;
 use crate::setup_vehicle::*;

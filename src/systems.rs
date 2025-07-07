@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use avian3d::prelude::{Collider, Dir3, ExternalForce, ShapeCastConfig, SpatialQuery, SpatialQueryFilter};
+use avian3d::prelude::{Collider, ExternalForce, ShapeCastConfig, SpatialQuery, SpatialQueryFilter};
 
 use crate::components::{Chassis, SuspensionState, Wheel};
 use crate::setup_vehicle::AntiRollBar;
@@ -34,7 +34,7 @@ pub fn drive_suspension(
         let origin = chassis_tf.translation + chassis_tf.rotation * wheel.local_pos;
         let down = -(chassis_tf.rotation * Vec3::Y);
         let dir = Dir3::new_unchecked(down);
-        let shape = Collider::ball(wheel.radius);
+        let shape = Collider::sphere(wheel.radius);
         let config = ShapeCastConfig { max_distance: wheel.rest_length + wheel.radius, ..Default::default() };
         let filter = SpatialQueryFilter::default();
 
@@ -99,7 +99,7 @@ pub fn update_chassis_pose(
     }
     if !hubs.is_empty() {
         let mut avg = Vec3::ZERO;
-        for p in hubs { avg += p; }
+        for p in &hubs { avg += p; }
         avg /= hubs.len() as f32;
         tf.translation = avg + chassis.com_offset;
     }
