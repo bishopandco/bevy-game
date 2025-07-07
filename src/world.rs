@@ -1,4 +1,5 @@
 use crate::input::Player;
+use crate::globals::Controlled;
 use avian3d::prelude::{Collider, ColliderConstructor, ColliderConstructorHierarchy};
 use avian3d::prelude::{LinearVelocity, RigidBody};
 use bevy::prelude::*;
@@ -55,5 +56,6 @@ fn setup_world(
             grounded: false,
             fire_timer: 0.0,
             weapon_energy: 1.0,
-        });
+        })
+        .insert(Controlled);
 }

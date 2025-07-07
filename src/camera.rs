@@ -1,5 +1,5 @@
 use crate::globals::GameParams;
-use crate::input::Player;
+use crate::globals::Controlled;
 use bevy::prelude::*;
 use bevy::render::view::RenderLayers;
 
@@ -16,7 +16,7 @@ impl Plugin for CameraPlugin {
 
 fn setup_camera(
     mut commands: Commands,
-    player_q: Query<&Transform, With<Player>>,
+    player_q: Query<&Transform, With<Controlled>>,
     cam_q: Query<(), With<FollowCamera>>,
     params: Res<GameParams>,
 ) {
@@ -40,7 +40,7 @@ fn setup_camera(
 fn follow_camera_system(
     params: Res<GameParams>,
     mut cam_q: Query<&mut Transform, With<FollowCamera>>,
-    target_q: Query<&Transform, (With<Player>, Without<FollowCamera>)>,
+    target_q: Query<&Transform, (With<Controlled>, Without<FollowCamera>)>,
 ) {
     let Ok(target_tf) = target_q.single() else {
         return;

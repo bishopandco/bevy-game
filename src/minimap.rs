@@ -2,8 +2,7 @@ use bevy::prelude::*;
 use bevy::render::camera::Viewport;
 use bevy::render::view::RenderLayers;
 use bevy::window::PrimaryWindow;
-use crate::globals::GameParams;
-use crate::input::Player;
+use crate::globals::{GameParams, Controlled};
 
 #[derive(Component)]
 struct MinimapCamera;
@@ -46,7 +45,7 @@ fn setup_minimap_camera(
 }
 
 fn minimap_follow_system(
-    player_q: Query<&Transform, (With<Player>, Without<MinimapCamera>)>,
+    player_q: Query<&Transform, (With<Controlled>, Without<MinimapCamera>)>,
     mut cam_q: Query<&mut Transform, With<MinimapCamera>>,
 ) {
     let Ok(player_tf) = player_q.single() else { return; };

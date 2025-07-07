@@ -2,6 +2,14 @@ use bevy::prelude::*;
 
 pub const PLAYER_HALF_EXTENTS: Vec3 = Vec3::new(5.0, 1.0, 10.0);
 
+#[derive(Component)]
+pub struct Controlled;
+
+#[derive(Component)]
+pub struct InVehicle {
+    pub vehicle: Entity,
+}
+
 #[derive(Resource)]
 pub struct GameParams {
     pub max_speed: f32,

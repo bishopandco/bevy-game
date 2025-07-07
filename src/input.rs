@@ -1,4 +1,5 @@
 use crate::globals::GameParams;
+use crate::globals::{Controlled, InVehicle};
 use avian3d::prelude::*;
 use bevy::{
     input::{keyboard::KeyCode, ButtonInput},
@@ -47,7 +48,7 @@ fn player_input_system(
     time: Res<Time>,
     keys: Res<ButtonInput<KeyCode>>,
     params: Res<GameParams>,
-    mut q: Query<&mut Player>,
+    mut q: Query<&mut Player, With<Controlled>>,
 ) {
     let dt = time.delta_secs();
     for mut plyr in &mut q {
@@ -60,7 +61,7 @@ fn player_move_system(
     time: Res<Time>,
     params: Res<GameParams>,
     spatial: SpatialQuery,
-    mut q: Query<(Entity, &mut Transform, &mut Player)>,
+    mut q: Query<(Entity, &mut Transform, &mut Player), With<Controlled>>,
 ) {
     let dt = time.delta_secs() / SUBSTEPS as f32;
     for (entity, mut tf, mut plyr) in &mut q {
@@ -78,7 +79,7 @@ fn player_move_system(
 
 fn player_orientation_system(
     spatial: SpatialQuery,
-    mut q: Query<(Entity, &mut Transform, &mut Player)>,
+    mut q: Query<(Entity, &mut Transform, &mut Player), With<Controlled>>,
 ) {
     for (entity, mut tf, mut plyr) in &mut q {
         apply_ground_snap(&spatial, entity, &mut tf, &mut plyr);

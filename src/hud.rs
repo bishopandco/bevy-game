@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy::render::view::{Layer, RenderLayers};
 use bevy_svg::prelude::*;
 
-use crate::{globals::GameParams, input::Player};
+use crate::{globals::{GameParams, Controlled}, input::Player, vehicle::Vehicle};
 
 /// All HUD elements are drawn on this render layer.
 pub const HUD_LAYER: u8 = 1;
@@ -54,13 +54,18 @@ fn setup_hud(mut commands: Commands, asset_server: Res<AssetServer>, windows: Qu
 
 fn update_speedometer(
     params: Res<GameParams>,
-    players: Query<&Player>,
+    controlled: Query<(Option<&Player>, Option<&Vehicle>), With<Controlled>>,
     mut q: Query<&mut Transform, With<Speedometer>>,
 ) {
-    let Ok(player) = players.single() else {
-        return;
+    let Ok((player, vehicle)) = controlled.single() else { return; };
+    let speed = if let Some(p) = player {
+        p.speed
+    } else if let Some(v) = vehicle {
+        v.speed
+    } else {
+        0.0
     };
-    let mut speed_ratio = player.speed.abs() / params.max_speed.max(f32::EPSILON);
+    let mut speed_ratio = speed.abs() / params.max_speed.max(f32::EPSILON);
     if speed_ratio > 1.0 {
         speed_ratio = 1.0;
     }

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::goals::{FinishGoal, StartGoal};
-use crate::input::Player;
+use crate::globals::Controlled;
 
 pub struct LapTimerPlugin;
 
@@ -27,7 +27,7 @@ const GOAL_RADIUS: f32 = 2.0;
 fn lap_timer_system(
     time: Res<Time>,
     mut timer: ResMut<LapTimer>,
-    player_q: Query<&Transform, With<Player>>,
+    player_q: Query<&Transform, With<Controlled>>,
     start_q: Query<&Transform, With<StartGoal>>,
     finish_q: Query<&Transform, With<FinishGoal>>,
 ) {
