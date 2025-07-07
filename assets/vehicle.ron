@@ -1,12 +1,12 @@
 (
     chassis: (
         mass: 1200.0,
-        com_offset: (0.0, -0.5, 0.0),
+        com_offset: [0.0, -0.5, 0.0],
         pitch_roll_smoothing: 0.2,
     ),
     wheels: [
         (
-            local_pos: (1.0, -0.5, 1.5),
+            local_pos: [1.0, -0.5, 1.5],
             radius: 0.5,
             rest_length: 0.3,
             spring_k: 30000.0,
@@ -14,7 +14,7 @@
             anti_roll_group: 0,
         ),
         (
-            local_pos: (-1.0, -0.5, 1.5),
+            local_pos: [-1.0, -0.5, 1.5],
             radius: 0.5,
             rest_length: 0.3,
             spring_k: 30000.0,
@@ -22,7 +22,7 @@
             anti_roll_group: 0,
         ),
         (
-            local_pos: (1.0, -0.5, -1.5),
+            local_pos: [1.0, -0.5, -1.5],
             radius: 0.5,
             rest_length: 0.3,
             spring_k: 30000.0,
@@ -30,7 +30,7 @@
             anti_roll_group: 1,
         ),
         (
-            local_pos: (-1.0, -0.5, -1.5),
+            local_pos: [-1.0, -0.5, -1.5],
             radius: 0.5,
             rest_length: 0.3,
             spring_k: 30000.0,
@@ -38,5 +38,5 @@
             anti_roll_group: 1,
         ),
     ],
-    anti_roll_stiffness: (5000.0, 5000.0),
+    anti_roll_stiffness: [5000.0, 5000.0],
 )
