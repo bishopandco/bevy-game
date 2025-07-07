@@ -3,6 +3,7 @@ use bevy::math::primitives::Cylinder;
 use bevy::prelude::*;
 
 use super::chassis::Chassis;
+use super::suspension::{spawn_hub, WheelHub};
 
 /// A wheel entity.
 #[derive(Component)]
@@ -14,7 +15,7 @@ pub struct WheelPlugin;
 
 impl Plugin for WheelPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, spawn_vehicle_wheels);
+        app.add_systems(Update, (spawn_vehicle_wheels, steer_system));
     }
 }
 
@@ -40,13 +41,14 @@ fn spawn_vehicle_wheels(
         Vec3::new(1.0, -0.75, -1.5),
     ];
     for (i, o) in offs.into_iter().enumerate() {
-        let arm = super::suspension::spawn_arm(
+        let hub = spawn_hub(
             &mut commands,
             meshes.as_mut(),
             materials.as_mut(),
             chassis,
             ch_tf,
             o,
+            i < 2,
             &params,
         );
         let pos = ch_tf.translation + o;
@@ -54,10 +56,19 @@ fn spawn_vehicle_wheels(
             &mut commands,
             meshes.as_mut(),
             materials.as_mut(),
-            arm,
+            hub,
             pos,
             i < 2,
         );
+    }
+}
+
+/// Rotate front wheel hubs according to steering input.
+fn steer_system(cmd: Res<super::controls::DriveCmd>, mut q: Query<(&WheelHub, &mut Transform)>) {
+    for (hub, mut tf) in &mut q {
+        if hub.front {
+            tf.rotation = Quat::from_rotation_y(cmd.steer * 0.5);
+        }
     }
 }
 
@@ -66,7 +77,7 @@ pub fn spawn_wheel(
     commands: &mut Commands,
     meshes: &mut Assets<Mesh>,
     materials: &mut Assets<StandardMaterial>,
-    arm: Entity,
+    hub: Entity,
     pos: Vec3,
     front: bool,
 ) -> Entity {
@@ -90,6 +101,6 @@ pub fn spawn_wheel(
             Wheel { front },
         ))
         .id();
-    commands.spawn(RevoluteJoint::new(arm, wheel).with_aligned_axis(Vec3::X));
+    commands.spawn(RevoluteJoint::new(hub, wheel).with_aligned_axis(Vec3::X));
     wheel
 }
