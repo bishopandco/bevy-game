@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy::ecs::system::ChildBuilder;
+use bevy::ecs::hierarchy::ChildSpawnerCommands;
 use bevy::math::primitives::Cylinder;
 use rand::Rng;
 
@@ -100,7 +100,7 @@ fn spawn_vehicle(
 }
 
 fn spawn_wheel(
-    parent: &mut ChildBuilder,
+    parent: &mut ChildSpawnerCommands,
     mesh: Handle<Mesh>,
     material: Handle<StandardMaterial>,
     offset: Vec3,
