@@ -109,7 +109,7 @@ pub fn raycast_wheels(
 ) {
     let ray_len = tuning.rest_length + tuning.max_travel;
     for (chassis_tf, children) in &chassis_q {
-        for child in children.iter().copied() {
+        for &child in children.iter() {
             if let Ok((mut wheel, mut tf)) = wheels.get_mut(child) {
                 let origin = chassis_tf.transform_point(wheel.mount);
                 let dir = chassis_tf.rotation * Vec3::NEG_Y;
@@ -122,7 +122,7 @@ pub fn raycast_wheels(
                 );
                 if let Some(hit) = result {
                     wheel.grounded = true;
-                    wheel.contact_point = hit.point;
+                    wheel.contact_point = origin + dir.normalize() * hit.distance;
                     wheel.contact_normal = hit.normal;
                     wheel.prev_compression = wheel.compression;
                     wheel.compression = tuning.rest_length - hit.distance;
@@ -142,11 +142,11 @@ pub fn raycast_wheels(
 pub fn apply_suspension(
     time: Res<Time>,
     tuning: Res<SuspensionTuning>,
-    mut chassis_q: Query<(&mut LinearVelocity, &GlobalTransform), With<Chassis>>,
+    mut chassis_q: Query<(&mut LinearVelocity, &GlobalTransform, &Chassis)>,
     wheels: Query<&RaycastWheel>,
 ) {
     let dt = time.delta_secs();
-    for (mut lv, chassis_tf) in &mut chassis_q {
+    for (mut lv, chassis_tf, chassis) in &mut chassis_q {
         for wheel in wheels.iter() {
             if !wheel.grounded { continue; }
             let rel_vel = lv.0.dot(wheel.contact_normal);
@@ -155,7 +155,7 @@ pub fn apply_suspension(
             let mut force = spring + damper;
             if force < 0.0 { force = 0.0; }
             let impulse = wheel.contact_normal * force * dt;
-            lv.0 += impulse / chassis_tf.affine().matrix3.determinant();
+            lv.0 += impulse / chassis.mass;
         }
     }
 }
@@ -164,11 +164,11 @@ pub fn apply_suspension(
 pub fn compute_tire_forces(
     time: Res<Time>,
     tuning: Res<SuspensionTuning>,
-    mut chassis_q: Query<&mut LinearVelocity, With<Chassis>>,
+    mut chassis_q: Query<(&mut LinearVelocity, &Chassis)>,
     wheels: Query<&RaycastWheel>,
 ) {
     let dt = time.delta_secs();
-    for mut lv in &mut chassis_q {
+    for (mut lv, chassis) in &mut chassis_q {
         for wheel in wheels.iter() {
             if !wheel.grounded { continue; }
             let load = tuning.k * wheel.compression;
@@ -176,7 +176,7 @@ pub fn compute_tire_forces(
             let lat_force = -tuning.mu_lat * load;
             let impulse = (wheel.contact_normal.cross(Vec3::Y) * lat_force)
                 + (wheel.contact_normal * long_force);
-            lv.0 += impulse * dt;
+            lv.0 += impulse * dt / chassis.mass;
         }
     }
 }
