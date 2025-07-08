@@ -109,7 +109,7 @@ pub fn raycast_wheels(
 ) {
     let ray_len = tuning.rest_length + tuning.max_travel;
     for (chassis_tf, children) in &chassis_q {
-        for &child in children.iter() {
+        for child in children.iter().copied() {
             if let Ok((mut wheel, mut tf)) = wheels.get_mut(child) {
                 let origin = chassis_tf.transform_point(wheel.mount);
                 let dir = chassis_tf.rotation * Vec3::NEG_Y;
