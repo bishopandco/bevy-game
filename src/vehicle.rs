@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use avian3d::prelude::{ColliderConstructor, ColliderConstructorHierarchy, RigidBody, LinearVelocity, AngularVelocity};
 use bevy::ecs::hierarchy::ChildSpawnerCommands;
 use bevy::math::primitives::Cylinder;
 use rand::Rng;
@@ -60,6 +61,11 @@ fn spawn_vehicle(
         .insert(Transform::from_xyz(0.0, WHEEL_RADIUS + 0.5, 0.0))
         .insert(GlobalTransform::default())
         .insert(Vehicle::default())
+        .insert(RigidBody::Dynamic)
+        .insert(ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh))
+        .insert(LinearVelocity::ZERO)
+        .insert(AngularVelocity::ZERO)
+        .insert(crate::vehicle_systems::Chassis { mass: 800.0 })
         .id();
 
     let wheel_mesh = meshes.add(Mesh::from(Cylinder {
@@ -109,11 +115,11 @@ fn spawn_wheel(
     material: Handle<StandardMaterial>,
     offset: Vec3,
     is_front: bool,
-) {
     parent
         .spawn(Mesh3d(mesh))
         .insert(MeshMaterial3d(material))
         .insert(Transform::from_translation(offset))
+        .insert(crate::vehicle_systems::RaycastWheel::new(offset, WHEEL_RADIUS, is_front, offset.x < 0.0))
         .insert(Wheel {
             is_front,
             radius: WHEEL_RADIUS,

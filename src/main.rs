@@ -14,6 +14,7 @@ use game_demo::targets::TargetsPlugin;
 use game_demo::goals::GoalsPlugin;
 use game_demo::lap_timer::LapTimerPlugin;
 use game_demo::socket_client::SocketClientPlugin;
+use game_demo::vehicle_systems::VehiclePhysicsPlugin;
 use game_demo::chat::ChatPlugin;
 use game_demo::vehicle::VehiclePlugin;
 
@@ -29,6 +30,7 @@ fn main() {
         .add_plugins((
             WorldPlugin,
             VehiclePlugin,
+            VehiclePhysicsPlugin,
             TargetsPlugin,
             GoalsPlugin,
             SkyDomePlugin,
