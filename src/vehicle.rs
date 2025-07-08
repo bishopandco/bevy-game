@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use avian3d::prelude::{ColliderConstructor, ColliderConstructorHierarchy, RigidBody, LinearVelocity, AngularVelocity};
-use bevy::ecs::hierarchy::ChildSpawnerCommands;
+use bevy::ecs::system::ChildBuilder;
 use bevy::math::primitives::Cylinder;
 use rand::Rng;
 
@@ -110,16 +110,22 @@ fn spawn_vehicle(
 }
 
 fn spawn_wheel(
-    parent: &mut ChildSpawnerCommands,
+    parent: &mut ChildBuilder,
     mesh: Handle<Mesh>,
     material: Handle<StandardMaterial>,
     offset: Vec3,
     is_front: bool,
+) {
     parent
         .spawn(Mesh3d(mesh))
         .insert(MeshMaterial3d(material))
         .insert(Transform::from_translation(offset))
-        .insert(crate::vehicle_systems::RaycastWheel::new(offset, WHEEL_RADIUS, is_front, offset.x < 0.0))
+        .insert(crate::vehicle_systems::RaycastWheel::new(
+            offset,
+            WHEEL_RADIUS,
+            is_front,
+            offset.x < 0.0,
+        ))
         .insert(Wheel {
             is_front,
             radius: WHEEL_RADIUS,
