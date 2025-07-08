@@ -1,5 +1,16 @@
 use bevy::prelude::*;
-use avian3d::prelude::{ColliderConstructor, ColliderConstructorHierarchy, RigidBody, LinearVelocity, AngularVelocity};
+use avian3d::prelude::{
+    ColliderConstructor,
+    ColliderConstructorHierarchy,
+    RigidBody,
+    LinearVelocity,
+    AngularVelocity,
+    SpatialQuery,
+    Collider,
+    Dir3,
+    ShapeCastConfig,
+    SpatialQueryFilter,
+};
 use bevy::ecs::hierarchy::ChildSpawnerCommands;
 use bevy::math::primitives::Cylinder;
 use rand::Rng;
@@ -36,6 +47,7 @@ impl Plugin for VehiclePlugin {
                     vehicle_input_system,
                     vehicle_move_system.after(vehicle_input_system),
                     wheel_update_system.after(vehicle_move_system),
+                    vehicle_orientation_system.after(wheel_update_system),
                     sync_player_to_vehicle_system,
                 ),
             );
@@ -48,6 +60,8 @@ const FRONT_AXLE_Z: f32 = 1.5;
 const REAR_AXLE_Z: f32 = -1.5;
 const AXLE_X: f32 = 1.0;
 const SUSPENSION_TRAVEL: f32 = 0.2;
+const CHASSIS_HALF: Vec3 = Vec3::new(AXLE_X + 0.5, 0.5, 2.0);
+const SKIN: f32 = 0.1;
 const ENTER_DISTANCE: f32 = 2.0;
 
 fn spawn_vehicle(
@@ -171,15 +185,63 @@ fn vehicle_input_system(
 
 fn vehicle_move_system(
     time: Res<Time>,
-    mut q: Query<(&mut Transform, &Vehicle), With<Controlled>>,
+    params: Res<GameParams>,
+    spatial: SpatialQuery,
+    mut q: Query<(Entity, &mut Transform, &mut Vehicle), With<Controlled>>,
 ) {
     let dt = time.delta_secs();
-    for (mut tf, vehicle) in &mut q {
+    let col = Collider::cuboid(CHASSIS_HALF.x, CHASSIS_HALF.y, CHASSIS_HALF.z);
+    for (entity, mut tf, mut vehicle) in &mut q {
         let yaw_rot = Quat::from_rotation_y(vehicle.yaw);
-        tf.rotation = yaw_rot;
         let forward = yaw_rot * Vec3::Z;
-        tf.translation += forward * vehicle.speed * dt;
+        let mut remaining = forward * vehicle.speed * dt;
+        let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
+
+        for _ in 0..3 {
+            let dist = remaining.length();
+            if dist < f32::EPSILON { break; }
+            let dir = Dir3::new_unchecked(remaining / dist);
+            match spatial.cast_shape(
+                &col,
+                tf.translation,
+                tf.rotation,
+                dir,
+                &ShapeCastConfig {
+                    compute_contact_on_penetration: true,
+                    max_distance: dist + SKIN,
+                    ..Default::default()
+                },
+                &filter,
+            ) {
+                Some(hit) => {
+                    tf.translation += dir.as_vec3() * (hit.distance - SKIN).max(0.0);
+                    slide_vehicle(&mut remaining, hit.normal1, &mut vehicle, &params);
+                }
+                None => {
+                    tf.translation += remaining;
+                    break;
+                }
+            }
+        }
     }
+}
+
+fn slide_vehicle(remaining: &mut Vec3, normal: Vec3, vehicle: &mut Vehicle, params: &GameParams) {
+    let incoming = *remaining;
+    *remaining -= remaining.dot(normal) * normal;
+    let mut factor = 1.0 - params.collision_damping;
+    if normal.y > 0.0 && normal.y < 1.0 {
+        let slope = 1.0 - normal.y;
+        let eased = slope.powf(params.slope_ease);
+        factor *= 1.0 - eased * params.slope_damping;
+    }
+    factor = factor.clamp(0.0, 1.0);
+    *remaining *= factor;
+    vehicle.speed *= factor;
+    let reflect_dir = (incoming - 2.0 * incoming.dot(normal) * normal).normalize_or_zero();
+    let incident = incoming.normalize_or_zero().dot(-normal).abs();
+    let bounce = incoming.length() * params.bounce_factor * incident;
+    *remaining += reflect_dir * bounce;
 }
 
 fn wheel_update_system(
@@ -200,6 +262,30 @@ fn wheel_update_system(
             let compression = (raycast.compression * 100.0).round() / 100.0;
             tf.translation = wheel.rest_offset - Vec3::Y * compression;
         }
+    }
+}
+
+fn vehicle_orientation_system(
+    mut chassis_q: Query<(&mut Transform, &Vehicle, &Children), With<Controlled>>,
+    wheels: Query<&crate::vehicle_systems::RaycastWheel>,
+) {
+    for (mut tf, vehicle, children) in &mut chassis_q {
+        let mut normal = Vec3::ZERO;
+        let mut count = 0;
+        for child in children.iter() {
+            if let Ok(w) = wheels.get(*child) {
+                if w.grounded {
+                    normal += w.contact_normal;
+                    count += 1;
+                }
+            }
+        }
+        if count == 0 { continue; }
+        let avg = (normal / count as f32).normalize_or_zero();
+        let yaw_rot = Quat::from_rotation_y(vehicle.yaw);
+        let target = Quat::from_rotation_arc(yaw_rot * Vec3::Y, avg) * yaw_rot;
+        const SMOOTH: f32 = 0.2;
+        tf.rotation = tf.rotation.slerp(target, SMOOTH);
     }
 }
 
