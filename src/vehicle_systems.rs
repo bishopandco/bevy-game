@@ -125,10 +125,9 @@ pub fn raycast_wheels(
                     wheel.contact_point = origin + dir.normalize() * hit.distance;
                     wheel.contact_normal = hit.normal;
                     wheel.prev_compression = wheel.compression;
-                    wheel.compression = (tuning.rest_length - hit.distance).max(0.0);
-                    if wheel.compression < 0.1 {
-                        wheel.compression = 0.0;
-                    }
+                    let raw = (tuning.rest_length - hit.distance).max(0.0);
+                    let rounded = (raw * 100.0).round() / 100.0;
+                    wheel.compression = if rounded < 0.1 { 0.0 } else { rounded };
                     tf.translation = wheel.mount - Vec3::Y * wheel.compression;
                 } else {
                     wheel.grounded = false;

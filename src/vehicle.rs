@@ -197,7 +197,8 @@ fn wheel_update_system(
                 Quat::from_rotation_y(steer)
                     * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)
                     * Quat::from_rotation_x(wheel.rotation);
-            tf.translation = wheel.rest_offset - Vec3::Y * raycast.compression;
+            let compression = (raycast.compression * 100.0).round() / 100.0;
+            tf.translation = wheel.rest_offset - Vec3::Y * compression;
         }
     }
 }
