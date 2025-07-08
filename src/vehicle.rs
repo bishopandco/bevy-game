@@ -272,8 +272,8 @@ fn vehicle_orientation_system(
     for (mut tf, vehicle, children) in &mut chassis_q {
         let mut normal = Vec3::ZERO;
         let mut count = 0;
-        for child in children.iter() {
-            if let Ok(w) = wheels.get(*child) {
+        for &child in children.iter() {
+            if let Ok(w) = wheels.get(child) {
                 if w.grounded {
                     normal += w.contact_normal;
                     count += 1;
