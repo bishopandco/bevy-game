@@ -23,3 +23,4 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 - [ ] Add Tests
 - [ ] Add Splash and Game UI
 - [ ] Levels manager
+See `SUSPENSION_TUNING.md` for suspension parameters.

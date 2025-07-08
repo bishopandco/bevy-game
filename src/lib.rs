@@ -15,3 +15,4 @@ pub mod socket_client;
 pub mod chat;
 pub mod hp_text;
 pub mod vehicle;
+pub mod vehicle_systems;
