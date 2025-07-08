@@ -185,11 +185,10 @@ fn vehicle_move_system(
 fn wheel_update_system(
     time: Res<Time>,
     vehicles: Query<&Vehicle>,
-    mut wheels: Query<(&ChildOf, &mut Transform, &mut Wheel)>,
+    mut wheels: Query<(&ChildOf, &mut Transform, &mut Wheel, &crate::vehicle_systems::RaycastWheel)>,
 ) {
     let dt = time.delta_secs();
-    let elapsed = time.elapsed_secs();
-    for (parent, mut tf, mut wheel) in &mut wheels {
+    for (parent, mut tf, mut wheel, raycast) in &mut wheels {
         if let Ok(vehicle) = vehicles.get(parent.parent()) {
             wheel.rotation += vehicle.speed * dt / wheel.radius;
             let steer = if wheel.is_front { vehicle.yaw } else { 0.0 };
@@ -198,8 +197,7 @@ fn wheel_update_system(
                 Quat::from_rotation_y(steer)
                     * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)
                     * Quat::from_rotation_x(wheel.rotation);
-            let y_off = (elapsed + wheel.phase).sin() * wheel.suspension;
-            tf.translation = wheel.rest_offset + Vec3::Y * y_off;
+            tf.translation = wheel.rest_offset - Vec3::Y * raycast.compression;
         }
     }
 }
