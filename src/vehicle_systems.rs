@@ -25,8 +25,8 @@ pub struct SuspensionTuning {
 impl Default for SuspensionTuning {
     fn default() -> Self {
         Self {
-            k: 2.0e5,
-            c: 6.0e3,
+            k: 8.0e4,
+            c: 2.0 * (8.0e4_f32 * 40.0_f32).sqrt(),
             mu_long: 1.0,
             mu_lat: 1.0,
             k_anti_roll: 1.5e4,
@@ -109,10 +109,10 @@ pub fn raycast_wheels(
 ) {
     let ray_len = tuning.rest_length + tuning.max_travel;
     for (chassis_tf, children) in &chassis_q {
-        for &child in children.iter() {
+        for child in children.iter() {
             if let Ok((mut wheel, mut tf)) = wheels.get_mut(child) {
                 let origin = chassis_tf.transform_point(wheel.mount);
-                let dir = chassis_tf.rotation * Vec3::NEG_Y;
+                let dir = chassis_tf.rotation() * Vec3::NEG_Y;
                 let result = spatial.cast_ray(
                     origin,
                     Dir3::new_unchecked(dir),
@@ -125,7 +125,10 @@ pub fn raycast_wheels(
                     wheel.contact_point = origin + dir.normalize() * hit.distance;
                     wheel.contact_normal = hit.normal;
                     wheel.prev_compression = wheel.compression;
-                    wheel.compression = tuning.rest_length - hit.distance;
+                    wheel.compression = (tuning.rest_length - hit.distance).max(0.0);
+                    if wheel.compression < 0.1 {
+                        wheel.compression = 0.0;
+                    }
                     tf.translation = wheel.mount - Vec3::Y * wheel.compression;
                 } else {
                     wheel.grounded = false;
@@ -146,24 +149,30 @@ pub fn apply_suspension(
     wheels: Query<&RaycastWheel>,
 ) {
     const STEP: f32 = 1.0 / 60.0;
-    let dt = time.delta_secs();
-    let steps = (dt / STEP).ceil() as u32;
-    let sub_dt = dt / steps as f32;
+    let dt      = time.delta_secs();
+    let steps   = (dt / STEP).ceil() as u32;
+    let sub_dt  = dt / steps as f32;
+
     for _ in 0..steps {
         for (mut lv, chassis) in &mut chassis_q {
             for wheel in wheels.iter() {
                 if !wheel.grounded { continue; }
-                let rel_vel = (wheel.compression - wheel.prev_compression) / sub_dt;
-                let spring = tuning.k * wheel.compression;
-                let damper = -tuning.c * rel_vel;
-                let mut force = spring + damper;
+
+                // plain spring-damper
+                let rel_vel   = (wheel.compression - wheel.prev_compression) / sub_dt;
+                let spring_f  =  tuning.k * wheel.compression;      // ↑ push up
+                let damper_f  =  tuning.c * rel_vel;                // ↑ resist motion
+                let mut force = spring_f + damper_f;
+
+                // never pull the wheel through the ground
                 if force < 0.0 { force = 0.0; }
+
                 let mut impulse = wheel.contact_normal * force * sub_dt;
                 let mag = impulse.length();
                 if !mag.is_finite() || mag > 1.0e5 {
-                    let clamped = mag.max(1.0e-6).min(1.0e5);
-                    impulse *= clamped / mag;
+                    impulse *= 1.0e5 / mag.max(1.0e-6);
                 }
+
                 lv.0 += impulse / chassis.mass;
             }
         }

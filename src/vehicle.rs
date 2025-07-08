@@ -6,6 +6,7 @@ use rand::Rng;
 
 use crate::globals::{GameParams, Controlled, InVehicle};
 use crate::input::Player;
+use crate::vehicle_systems::SuspensionTuning;
 
 #[derive(Component, Default)]
 pub struct Vehicle {
@@ -54,7 +55,13 @@ fn spawn_vehicle(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
+    mut tuning: ResMut<SuspensionTuning>,   // <-- add this
 ) {
+    // ----- mass-aware damping ---------------------------------------------
+    const CHASSIS_MASS: f32 = 800.0;        // same value you stick in Chassis
+    tuning.c = 2.0 * (tuning.k * (CHASSIS_MASS / 4.0)).sqrt();
+    // -----------------------------------------------------------------------
+
     let scene: Handle<Scene> = asset_server.load("models/car.glb#Scene0");
     let vehicle = commands
         .spawn(SceneRoot(scene))
@@ -65,7 +72,7 @@ fn spawn_vehicle(
         .insert(ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh))
         .insert(LinearVelocity::ZERO)
         .insert(AngularVelocity::ZERO)
-        .insert(crate::vehicle_systems::Chassis { mass: 800.0 })
+        .insert(crate::vehicle_systems::Chassis { mass: CHASSIS_MASS })
         .id();
 
     let wheel_mesh = meshes.add(Mesh::from(Cylinder {
