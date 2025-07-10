@@ -16,7 +16,7 @@ use game_demo::lap_timer::LapTimerPlugin;
 use game_demo::socket_client::SocketClientPlugin;
 use game_demo::vehicle_systems::VehiclePhysicsPlugin;
 use game_demo::chat::ChatPlugin;
-use game_demo::vehicle::VehiclePlugin;
+use game_demo::vehicle_plugin::VehiclePlugin;
 
 fn main() {
     App::new()
