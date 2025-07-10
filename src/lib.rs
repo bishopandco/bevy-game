@@ -16,3 +16,5 @@ pub mod chat;
 pub mod hp_text;
 pub mod vehicle;
 pub mod vehicle_systems;
+pub mod suspension;
+pub mod vehicle_plugin;
