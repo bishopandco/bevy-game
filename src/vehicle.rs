@@ -32,7 +32,7 @@ pub struct Wheel {
 
 pub struct VehiclePlugin;
 
-impl<Parent> Plugin for VehiclePlugin {
+impl Plugin for VehiclePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_vehicle)
             .add_systems(
@@ -41,7 +41,7 @@ impl<Parent> Plugin for VehiclePlugin {
                     vehicle_toggle_system,
                     vehicle_input_system,
                     vehicle_move_system.after(vehicle_input_system),
-                    wheel_update_system::<Parent>.after(vehicle_move_system),
+                    wheel_update_system.after(vehicle_move_system),
                     sync_player_to_vehicle_system,
                 ),
             );
@@ -190,7 +190,7 @@ fn vehicle_move_system(
     }
 }
 
-fn wheel_update_system<Parent: bevy::prelude::Component>(
+fn wheel_update_system(
     time: Res<Time>,
     vehicles: Query<&Vehicle>,
     mut wheels: Query<(&Parent, &mut Transform, &mut Wheel)>,
