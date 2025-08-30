@@ -7,7 +7,6 @@ use avian3d::prelude::{
     AngularVelocity,
 };
 use bevy::ecs::hierarchy::ChildSpawnerCommands;
-use bevy::hierarchy::Parent;
 use bevy::math::primitives::Cylinder;
 use rand::Rng;
 
