@@ -159,38 +159,39 @@ fn vehicle_input_system(
             vehicle.speed = vehicle.speed.signum()
                 * (vehicle.speed.abs() - params.friction * dt).max(0.0);
         }
-
+        vehicle.yaw = 0.0;
         if keys.pressed(KeyCode::KeyA) {
-            vehicle.yaw += params.yaw_rate * dt;
+            vehicle.yaw += params.yaw_rate;
         }
         if keys.pressed(KeyCode::KeyD) {
-            vehicle.yaw -= params.yaw_rate * dt;
+            vehicle.yaw -= params.yaw_rate;
         }
     }
 }
 
 fn vehicle_move_system(
-    time: Res<Time>,
-    mut q: Query<(&mut Transform, &Vehicle), With<Controlled>>,
+    mut q: Query<(
+        &Vehicle,
+        &Transform,
+        &mut LinearVelocity,
+        &mut AngularVelocity,
+    ), With<Controlled>>,
 ) {
-    let dt = time.delta_secs();
-    for (mut tf, vehicle) in &mut q {
-        let yaw_rot = Quat::from_rotation_y(vehicle.yaw);
-        tf.rotation = yaw_rot;
-        let forward = yaw_rot * Vec3::Z;
-        tf.translation += forward * vehicle.speed * dt;
+    for (vehicle, tf, mut lv, mut av) in &mut q {
+        let forward = tf.rotation * Vec3::Z;
+        lv.0 = forward * vehicle.speed;
+        av.0.y = vehicle.yaw;
     }
 }
 
 fn wheel_update_system(
     time: Res<Time>,
     vehicles: Query<&Vehicle>,
-    mut wheels: Query<(&ChildOf, &mut Transform, &mut Wheel)>,
+    mut wheels: Query<(&Parent, &mut Transform, &mut Wheel)>,
 ) {
     let dt = time.delta_secs();
-    let elapsed = time.elapsed_secs();
     for (parent, mut tf, mut wheel) in &mut wheels {
-        if let Ok(vehicle) = vehicles.get(parent.parent()) {
+        if let Ok(vehicle) = vehicles.get(parent.get()) {
             wheel.rotation += vehicle.speed * dt / wheel.radius;
             let steer = if wheel.is_front { vehicle.yaw } else { 0.0 };
             // keep wheel upright while allowing steering and rolling
@@ -198,8 +199,6 @@ fn wheel_update_system(
                 Quat::from_rotation_y(steer)
                     * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)
                     * Quat::from_rotation_x(wheel.rotation);
-            let y_off = (elapsed + wheel.phase).sin() * wheel.suspension;
-            tf.translation = wheel.rest_offset + Vec3::Y * y_off;
         }
     }
 }
