@@ -1,6 +1,13 @@
 use bevy::prelude::*;
-use avian3d::prelude::{ColliderConstructor, ColliderConstructorHierarchy, RigidBody, LinearVelocity, AngularVelocity};
-use bevy::ecs::hierarchy::{ChildSpawnerCommands, Parent};
+use avian3d::prelude::{
+    ColliderConstructor,
+    ColliderConstructorHierarchy,
+    RigidBody,
+    LinearVelocity,
+    AngularVelocity,
+};
+use bevy::ecs::hierarchy::ChildSpawnerCommands;
+use bevy::hierarchy::Parent;
 use bevy::math::primitives::Cylinder;
 use rand::Rng;
 
