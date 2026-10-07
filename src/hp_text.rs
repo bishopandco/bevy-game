@@ -29,7 +29,7 @@ fn hp_text_system(
         let pct = hp_text.timer.fraction_remaining();
         color.0 = color.0.with_alpha(pct);
         tf.translation.y += time.delta_secs() * 0.5;
-        if hp_text.timer.finished() {
+        if hp_text.timer.is_finished() {
             commands.entity(entity).despawn();
         }
     }

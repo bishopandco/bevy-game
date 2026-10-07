@@ -1,7 +1,7 @@
 use crate::globals::GameParams;
 use crate::globals::Controlled;
 use bevy::prelude::*;
-use bevy::render::view::RenderLayers;
+use bevy::camera::visibility::RenderLayers;
 
 #[derive(Component, Default)]
 pub struct FollowCamera;
