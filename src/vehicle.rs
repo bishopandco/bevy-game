@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use avian3d::prelude::{ColliderConstructor, ColliderConstructorHierarchy, RigidBody, LinearVelocity, AngularVelocity};
 use bevy::ecs::hierarchy::ChildSpawnerCommands;
 use bevy::math::primitives::Cylinder;
-use rand::Rng;
 
 use crate::globals::{GameParams, Controlled, InVehicle};
 use crate::input::Player;
@@ -62,9 +61,9 @@ fn spawn_vehicle(
     tuning.c = 2.0 * (tuning.k * (CHASSIS_MASS / 4.0)).sqrt();
     // -----------------------------------------------------------------------
 
-    let scene: Handle<Scene> = asset_server.load("models/car.glb#Scene0");
+    let scene: Handle<WorldAsset> = asset_server.load("models/car.glb#Scene0");
     let vehicle = commands
-        .spawn(SceneRoot(scene))
+        .spawn(WorldAssetRoot(scene))
         .insert(Transform::from_xyz(0.0, WHEEL_RADIUS + 0.5, 0.0))
         .insert(GlobalTransform::default())
         .insert(Vehicle::default())
@@ -138,7 +137,7 @@ fn spawn_wheel(
             radius: WHEEL_RADIUS,
             rest_offset: offset,
             suspension: SUSPENSION_TRAVEL,
-            phase: rand::thread_rng().gen::<f32>() * std::f32::consts::TAU,
+            phase: rand::random::<f32>() * std::f32::consts::TAU,
             rotation: 0.0,
         });
 }

@@ -1,22 +1,26 @@
 use bevy::prelude::*;
 use bevy::input::{keyboard::KeyCode, ButtonInput};
-use bevy_egui::{egui, EguiContextPass, EguiContexts, EguiPlugin};
+use bevy_egui::{egui, EguiContexts, EguiGlobalSettings, EguiPlugin, EguiPrimaryContextPass};
 
 use crate::globals::GameParams;
 use crate::input::Player;
 
-#[derive(Event, Default, Debug)]
+#[derive(Message, Default, Debug)]
 pub struct RespawnEvent;
 
 pub struct DebugUiPlugin;
 
 impl Plugin for DebugUiPlugin {
     fn build(&self, app: &mut App) {
-        // Only add once in your whole app; drop this if EguiPlugin is in main.rs already.
         app.add_plugins(EguiPlugin::default())
+            // The HUD camera owns the primary context; never attach it to the minimap.
+            .insert_resource(EguiGlobalSettings {
+                auto_create_primary_context: false,
+                ..default()
+            })
             .insert_resource(DebugUiState::default())
-            .add_event::<RespawnEvent>()
-            .add_systems(EguiContextPass, debug_ui)
+            .add_message::<RespawnEvent>()
+            .add_systems(EguiPrimaryContextPass, debug_ui)
             .add_systems(Update, (handle_respawn, toggle_debug_ui));
     }
 }
@@ -37,13 +41,13 @@ fn debug_ui(
     mut params: ResMut<GameParams>,
     players: Query<(&Player, &Transform)>,
     time: Res<Time>,
-    mut respawn_writer: EventWriter<RespawnEvent>,
+    mut respawn_writer: MessageWriter<RespawnEvent>,
     state: Res<DebugUiState>,
-) {
+) -> Result {
     if !state.visible {
-        return;
+        return Ok(());
     }
-    let ctx = ctxs.ctx_mut();
+    let ctx = ctxs.ctx_mut()?;
     egui::Window::new("GameParams").show(ctx, |ui| {
         ui.label(format!("FPS: {:.0}", 1.0 / time.delta_secs()));
         if ui.button("Respawn").clicked() {
@@ -88,10 +92,11 @@ fn debug_ui(
             ui.separator();
         }
     });
+    Ok(())
 }
 
 fn handle_respawn(
-    mut ev: EventReader<RespawnEvent>,
+    mut ev: MessageReader<RespawnEvent>,
     mut players: Query<(&mut Transform, &mut Player)>,
 ) {
     if ev.is_empty() {

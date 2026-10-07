@@ -18,9 +18,9 @@ fn setup_world(
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    let terrain: Handle<Scene> = asset_server.load("models/terrain.glb#Scene0");
+    let terrain: Handle<WorldAsset> = asset_server.load("models/terrain.glb#Scene0");
     commands
-        .spawn(SceneRoot(terrain))
+        .spawn(WorldAssetRoot(terrain))
         .insert(Transform::from_xyz(0.0, 0.0, 0.0))
         .insert(GlobalTransform::default())
         .insert(ColliderConstructorHierarchy::new(
@@ -28,7 +28,7 @@ fn setup_world(
         ))
         .insert(RigidBody::Static);
 
-    commands.insert_resource(AmbientLight {
+    commands.insert_resource(GlobalAmbientLight {
         brightness: 1000.0,
         ..default()
     });

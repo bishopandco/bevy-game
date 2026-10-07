@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use bevy::render::camera::Viewport;
-use bevy::render::view::RenderLayers;
+use bevy::camera::Viewport;
+use bevy::camera::visibility::RenderLayers;
 use bevy::window::PrimaryWindow;
 use crate::globals::{GameParams, Controlled};
 
