@@ -134,7 +134,7 @@ pub fn laser_movement_system(
         laser.life -= dt;
         let ratio = (laser.life / LASER_LIFETIME).clamp(0.0, 1.0);
         light.intensity = LASER_LIGHT_INTENSITY * ratio;
-        if let Some(mat) = materials.get_mut(&laser.material) {
+        if let Some(mut mat) = materials.get_mut(&laser.material) {
             mat.emissive = LinearRgba::from(Color::srgb(5.0 * ratio, 0.0, 0.0));
         }
         if laser.life <= 0.0 {

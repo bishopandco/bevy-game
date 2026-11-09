@@ -33,9 +33,9 @@ impl Plugin for TargetsPlugin {
 const TARGET_HALF_EXTENTS: Vec3 = Vec3::new(0.5, 10.0, 0.5);
 
 fn spawn_target(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let scene: Handle<Scene> = asset_server.load("models/targets.glb#Scene0");
+    let scene: Handle<WorldAsset> = asset_server.load("models/targets.glb#Scene0");
     commands
-        .spawn(SceneRoot(scene))
+        .spawn(WorldAssetRoot(scene))
         .insert(Transform::from_xyz(0.0, 0.0, 5.0))
         .insert(GlobalTransform::default())
         .insert(ColliderConstructorHierarchy::new(
@@ -85,8 +85,8 @@ fn laser_hit_system(
                 commands.spawn((
                     Text2d::new(format!("{} HP", new_hp)),
                     TextFont {
-                        font,
-                        font_size: 20.0,
+                        font: font.into(),
+                        font_size: FontSize::Px(20.0),
                         ..default()
                     },
                     TextColor::WHITE,

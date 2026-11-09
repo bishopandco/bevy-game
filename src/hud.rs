@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy::render::view::{Layer, RenderLayers};
+use bevy::camera::visibility::{Layer, RenderLayers};
 use bevy_svg::prelude::*;
 
 use crate::{globals::{GameParams, Controlled}, input::Player, vehicle::Vehicle};
@@ -26,6 +26,7 @@ fn setup_hud(mut commands: Commands, asset_server: Res<AssetServer>, windows: Qu
     // remains visible.
     commands.spawn((
         Camera2d,
+        bevy_egui::PrimaryEguiContext,
         Camera {
             order: 2,
             clear_color: ClearColorConfig::None,

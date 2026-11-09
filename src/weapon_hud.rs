@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy::render::view::{Layer, RenderLayers};
+use bevy::camera::visibility::{Layer, RenderLayers};
 use bevy_svg::prelude::*;
 
 use crate::{hud::HUD_LAYER, input::Player};

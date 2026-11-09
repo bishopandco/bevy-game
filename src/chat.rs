@@ -16,7 +16,7 @@ impl Plugin for ChatPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ChatLog>()
             .add_systems(Update, receive_messages)
-            .add_systems(bevy_egui::EguiContextPass, chat_ui);
+            .add_systems(bevy_egui::EguiPrimaryContextPass, chat_ui);
     }
 }
 
@@ -27,8 +27,8 @@ fn receive_messages(mut client: ResMut<SocketClient>, mut log: ResMut<ChatLog>) 
     }
 }
 
-fn chat_ui(mut ctxs: EguiContexts, mut log: ResMut<ChatLog>, client: Res<SocketClient>) {
-    let ctx = ctxs.ctx_mut();
+fn chat_ui(mut ctxs: EguiContexts, mut log: ResMut<ChatLog>, client: Res<SocketClient>) -> Result {
+    let ctx = ctxs.ctx_mut()?;
     egui::Window::new("Chat").show(ctx, |ui| {
         egui::ScrollArea::vertical().max_height(150.0).show(ui, |ui| {
             for msg in &log.messages {
@@ -49,4 +49,5 @@ fn chat_ui(mut ctxs: EguiContexts, mut log: ResMut<ChatLog>, client: Res<SocketC
             }
         });
     });
+    Ok(())
 }
