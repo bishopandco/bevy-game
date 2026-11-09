@@ -39,7 +39,7 @@ impl Default for WheelTuning {
             droop_travel: 0.15,
             bump_stop_rate: 100_000.0,
             max_force: 20_000.0,
-            friction: 1.1,
+            friction: 1.6,
             lateral_stiffness: 2_500.0,
         }
     }
