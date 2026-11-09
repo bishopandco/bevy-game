@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy::math::primitives::Sphere;
 
 #[derive(Component)]
 struct SkyDome;

@@ -1,7 +1,12 @@
 # Install Rust
-Requires Rust 1.95 or newer for Bevy 0.19.1. The game uses compatible stable
-releases of Avian 0.7, bevy_egui 0.42, and bevy_svg 0.19, with resolved versions
-recorded in `Cargo.lock`.
+Requires Rust 1.97.1 or newer for Bevy 0.20.1. The game uses Avian 0.8 and
+bevy_egui 0.43, with resolved versions recorded in `Cargo.lock`.
+
+The published `bevy_svg` release still targets Bevy 0.19. SVG rendering uses
+[the upstream Bevy 0.20 port](https://github.com/Weasy666/bevy_svg/commit/d4a646e66aaefa1efc5e43a7a4d0b19281e3168e),
+pinned to commit `d4a646e66aaefa1efc5e43a7a4d0b19281e3168e`. This is
+unreleased dependency code; replace the Git pin when a compatible release is
+published.
 
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
