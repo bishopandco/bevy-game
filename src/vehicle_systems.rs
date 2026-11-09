@@ -2,6 +2,7 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 
 use crate::{globals::Controlled, input::Player, vehicle::Vehicle};
+use crate::skid_marks::{SkidAnchor, SkidMarks, SkidMarksPlugin};
 
 pub const CHASSIS_MASS: f32 = 800.0;
 pub const WHEEL_RADIUS: f32 = 0.5;
@@ -84,6 +85,7 @@ pub struct WheelState {
     pub contact: Vec3,
     pub normal: Vec3,
     pub spin: f32,
+    pub(crate) skid_anchor: Option<SkidAnchor>,
 }
 
 pub struct VehiclePhysicsPlugin;
@@ -93,7 +95,8 @@ pub struct VehicleReset;
 
 impl Plugin for VehiclePhysicsPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<SuspensionTuning>()
+        app.add_plugins(SkidMarksPlugin)
+            .init_resource::<SuspensionTuning>()
             .add_message::<VehicleReset>()
             .add_systems(FixedPostUpdate, reset_vehicles.before(PhysicsSystems::Prepare))
             .add_systems(FixedPostUpdate, sync_center_of_mass.before(PhysicsSystems::Prepare))
@@ -143,6 +146,7 @@ fn simulate_vehicles(
     spatial: SpatialQuery,
     players: Query<Entity, With<Player>>,
     mut vehicles: Query<(Entity, Forces, &mut Vehicle, Has<Controlled>)>,
+    mut skid_marks: ResMut<SkidMarks>,
 ) {
     let dt = time.delta_secs();
     if dt <= 0.0 { return; }
@@ -167,7 +171,7 @@ fn simulate_vehicles(
         vehicle.steering = current_steering
             + (steer_target - current_steering).clamp(-steer_step, steer_step);
 
-        // Only the chassis has a collider; the GLTF hierarchy is visual only.
+        // Only the chassis has a collider; mechanical parts are visual only.
         // Exclude the chassis and player colliders from suspension ground probes.
         let filter = SpatialQueryFilter::default()
             .with_excluded_entities(std::iter::once(entity).chain(players.iter()));
@@ -187,10 +191,16 @@ fn simulate_vehicles(
 
             let Some(hit) = spatial.cast_ray(
                 mount, Dir3::new_unchecked(-up), max_length + WHEEL_RADIUS, true, &filter,
-            ) else { continue; };
+            ) else {
+                wheel.skid_anchor = None;
+                continue;
+            };
             // Reject surfaces facing away from the suspension (walls/ceilings).
             let alignment = hit.normal.dot(up);
-            if alignment < 0.2 { continue; }
+            if alignment < 0.2 {
+                wheel.skid_anchor = None;
+                continue;
+            }
 
             let raw_length = hit.distance - WHEEL_RADIUS;
             wheel.length = raw_length.clamp(min_length, max_length);
@@ -219,6 +229,10 @@ fn simulate_vehicles(
             let lateral = hit.normal.cross(tangent).normalize_or_zero();
             let longitudinal_speed = velocity.dot(tangent);
             let lateral_speed = velocity.dot(lateral);
+            let contact = wheel.contact;
+            let normal = wheel.normal;
+            let load = wheel.load;
+            skid_marks.sample(&mut wheel.skid_anchor, contact, normal, lateral_speed, load);
             let effective_mass = CHASSIS_MASS / 4.0;
             let stop_force = -longitudinal_speed * effective_mass / dt;
             let rolling = tuning.rolling_resistance * wheel.load;
