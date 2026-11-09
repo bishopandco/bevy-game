@@ -18,3 +18,4 @@ pub mod vehicle;
 pub mod vehicle_systems;
 
 mod vehicle_visuals;
+mod skid_marks;

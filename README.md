@@ -45,6 +45,9 @@ Low-angle sunlight and reduced ambient fill emphasize the slopes.
 The rough gray concrete has subtle mottling and dark minor grid lines. Terrain
 colliders use static friction 1.5 and dynamic friction 1.3. The raycast tires use
 their own load-limited grip coefficient, defaulting to 1.6 (previously 1.1).
+Grounded tires leave dark skid marks when sideways contact speed exceeds
+0.8 m/s. Greater lateral slip and wheel load make the marks darker. Marks remain
+in world space; the oldest are removed after 4,096 segments to bound memory.
 
 # Roadmap 
 - [ ] Compile to WASM

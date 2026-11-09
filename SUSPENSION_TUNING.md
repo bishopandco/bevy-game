@@ -64,6 +64,13 @@ it does not multiply drive force. Concrete collider friction is configured
 separately (static 1.5, dynamic 1.3) for ordinary rigid-body contact. The raycast
 tire model uses its per-wheel friction setting rather than Avian's contact friction.
 
+Sideways slides above 0.8 m/s leave tire-width skid marks when the wheel carries
+at least 100 N. Darkness increases with slip and load. Straight driving and
+unloaded wheels do not generate marks. Contact loss and vehicle resets break the
+trail. Marks are sampled at physics steps and rendered in one reusable mesh,
+with a 4,096-segment limit that removes the oldest marks first. They are visual
+only and do not change friction or collision.
+
 ## Telemetry and limits
 
 Each corner reports contact, compression, and normal load. Enable the debug drawing
