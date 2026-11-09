@@ -54,6 +54,7 @@ pub struct SuspensionTuning {
     pub max_speed: f32,
     pub steering_angle: f32,
     pub steering_rate: f32,
+    pub center_of_mass_height: f32,
     pub debug_draw: bool,
 }
 
@@ -67,6 +68,7 @@ impl Default for SuspensionTuning {
             max_speed: 40.0,
             steering_angle: 0.5,
             steering_rate: 2.0,
+            center_of_mass_height: -0.35,
             debug_draw: false,
         }
     }
@@ -94,6 +96,7 @@ impl Plugin for VehiclePhysicsPlugin {
         app.init_resource::<SuspensionTuning>()
             .add_message::<VehicleReset>()
             .add_systems(FixedPostUpdate, reset_vehicles.before(PhysicsSystems::Prepare))
+            .add_systems(FixedPostUpdate, sync_center_of_mass.before(PhysicsSystems::Prepare))
             .add_systems(
                 PhysicsSchedule,
                 simulate_vehicles
@@ -101,6 +104,16 @@ impl Plugin for VehiclePhysicsPlugin {
                     .before(PhysicsStepSystems::Solver),
             )
             .add_systems(Update, draw_suspension);
+    }
+}
+
+fn sync_center_of_mass(
+    tuning: Res<SuspensionTuning>,
+    mut bodies: Query<&mut CenterOfMass, With<Vehicle>>,
+) {
+    for mut center in &mut bodies {
+        let target = Vec3::new(0.0, tuning.center_of_mass_height, 0.0);
+        if center.0 != target { center.0 = target; }
     }
 }
 

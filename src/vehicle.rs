@@ -3,7 +3,8 @@ use bevy::prelude::*;
 
 use crate::globals::{Controlled, InVehicle};
 use crate::input::Player;
-use crate::vehicle_systems::{SuspensionTuning, WheelState, CHASSIS_MASS, WHEEL_MOUNTS, WHEEL_RADIUS};
+use crate::vehicle_systems::{SuspensionTuning, WheelState, CHASSIS_MASS};
+use crate::vehicle_visuals::{spawn_vehicle_parts, update_vehicle_parts};
 
 #[derive(Component, Default)]
 pub struct Vehicle {
@@ -13,16 +14,13 @@ pub struct Vehicle {
     pub wheels: [WheelState; 4],
 }
 
-#[derive(Component)]
-struct WheelVisual { index: usize }
-
 pub struct VehiclePlugin;
 
 impl Plugin for VehiclePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_vehicle)
             .add_systems(Update, (vehicle_toggle_system, sync_player_to_vehicle_system).chain())
-            .add_systems(Update, update_wheel_visuals);
+            .add_systems(Update, update_vehicle_parts);
     }
 }
 
@@ -32,20 +30,21 @@ fn spawn_vehicle(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    asset_server: Res<AssetServer>,
     tuning: Res<SuspensionTuning>,
 ) {
-    // The GLTF is visual only. A convex primitive is the sole chassis collider;
-    // wheel visuals cannot collide with the body or intercept ground probes.
+    // Visible mechanical parts are children of the one dynamic chassis body.
+    // They have no colliders and cannot interfere with suspension ground probes.
     let collider = Collider::cuboid(1.6, 0.5, 3.2);
     let inertia = AngularInertia::from_shape(&collider, CHASSIS_MASS);
     let vehicle = commands.spawn((
-        WorldAssetRoot(asset_server.load("models/car.glb#Scene0")),
+        Name::new("Independent suspension chassis"),
         Transform::from_xyz(2.0, 1.2, 0.0),
+        Visibility::default(),
         Vehicle::default(),
         RigidBody::Dynamic,
         collider,
         Mass(CHASSIS_MASS),
+        CenterOfMass::new(0.0, tuning.center_of_mass_height, 0.0),
         inertia,
         Friction::ZERO,
         Restitution::ZERO,
@@ -53,34 +52,7 @@ fn spawn_vehicle(
         AngularVelocity::ZERO,
     )).id();
 
-    let wheel_mesh = meshes.add(Cylinder { radius: WHEEL_RADIUS, half_height: 0.15 });
-    let wheel_material = materials.add(Color::srgb(0.1, 0.1, 0.1));
-    commands.entity(vehicle).with_children(|parent| {
-        for index in 0..4 {
-            parent.spawn((
-                Mesh3d(wheel_mesh.clone()),
-                MeshMaterial3d(wheel_material.clone()),
-                Transform::from_translation(WHEEL_MOUNTS[index] - Vec3::Y * tuning.wheels[index].rest_length)
-                    .with_rotation(Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)),
-                WheelVisual { index },
-            ));
-        }
-    });
-}
-
-fn update_wheel_visuals(
-    vehicles: Query<&Vehicle>,
-    mut wheels: Query<(&ChildOf, &WheelVisual, &mut Transform)>,
-) {
-    for (parent, visual, mut transform) in &mut wheels {
-        let Ok(vehicle) = vehicles.get(parent.parent()) else { continue; };
-        let wheel = vehicle.wheels[visual.index];
-        transform.translation = WHEEL_MOUNTS[visual.index] - Vec3::Y * wheel.length;
-        let steer = if visual.index < 2 { vehicle.steering } else { 0.0 };
-        transform.rotation = Quat::from_rotation_y(steer)
-            * Quat::from_rotation_x(wheel.spin)
-            * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2);
-    }
+    spawn_vehicle_parts(&mut commands, vehicle, &mut meshes, &mut materials);
 }
 
 fn vehicle_toggle_system(

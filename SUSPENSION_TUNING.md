@@ -1,7 +1,9 @@
 # Vehicle suspension
 
 The vehicle is an 800 kg dynamic Avian chassis with a cuboid collider and
-four independent raycast wheels. The GLTF and wheel meshes are visual only.
+four independent raycast wheels. The placeholder car GLTF is no longer loaded.
+The visible frame, differentials, half-shafts, control arms, steering knuckles,
+coil springs, telescoping dampers, and wheels are procedural meshes.
 Avian integrates wheel forces and their torques at its fixed physics timestep.
 No vehicle system writes the chassis transform during normal driving.
 
@@ -42,6 +44,11 @@ for less sag; adjust bump and rebound damping to control oscillation. Excessive
 stiffness or damping can still cause instability; defaults need in-game evaluation.
 There is no artificial anti-roll torque or force linking the two sides.
 
+The default center of mass is 0.35 m below the chassis origin to reduce rollover
+tendency. Adjust **Center of mass height (m)** under **Drive and steering** live;
+more-negative values lower it. The cyan sphere marks its local position.
+This changes Avian's mass properties; it does not lock body roll or pitch.
+
 ## Drive and steering
 
 Drive and brake force settings are totals, distributed equally across the four
@@ -55,8 +62,12 @@ Airborne wheels supply neither suspension support nor traction.
 
 Each corner reports contact, compression, and normal load. Enable the debug drawing
 to show green contact probes, red airborne probes, and yellow normal-load lines.
-Wheel meshes follow measured suspension length and contact speed, rather than a
-sine-wave animation.
+Wheel meshes follow measured suspension length and contact speed. Half-shafts,
+control arms, knuckles, and shocks follow each wheel's position and steering.
+Yellow front springs and blue rear springs shorten and extend with wheel travel.
+The control-arm poses are visual approximations of the raycast wheel's vertical
+path, rather than a constrained linkage simulation. The decorative parts do not
+add mass, collision, joints, or separate rigid bodies.
 
 This is a raycast vehicle model for static terrain. Wheels have no separate rigid
 bodies, unsprung mass, rotational inertia, or detailed tire-slip model. A single
