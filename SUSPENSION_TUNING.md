@@ -58,6 +58,12 @@ it does not forcibly clamp velocity. Rolling resistance opposes forward/reverse
 motion. Tire forces act in the road plane and share a load-limited friction circle.
 Airborne wheels supply neither suspension support nor traction.
 
+Tire friction defaults to 1.6 for the concrete driving surface, up from 1.1.
+This increases the combined tire-force limit by about 45% at the same wheel load;
+it does not multiply drive force. Concrete collider friction is configured
+separately (static 1.5, dynamic 1.3) for ordinary rigid-body contact. The raycast
+tire model uses its per-wheel friction setting rather than Avian's contact friction.
+
 ## Telemetry and limits
 
 Each corner reports contact, compression, and normal load. Enable the debug drawing

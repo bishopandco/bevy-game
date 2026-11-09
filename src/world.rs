@@ -1,7 +1,7 @@
 use crate::input::Player;
 use crate::globals::Controlled;
 use avian3d::prelude::{Collider, ColliderConstructor, ColliderConstructorHierarchy};
-use avian3d::prelude::{DebugRender, LinearVelocity, RigidBody};
+use avian3d::prelude::{DebugRender, Friction, LinearVelocity, RigidBody};
 use bevy::prelude::*;
 use bevy::asset::RenderAssetUsages;
 use bevy::mesh::{Indices, PrimitiveTopology};
@@ -104,7 +104,7 @@ fn spawn_rolling_hills(
 ) {
     let material = materials.add(StandardMaterial {
         base_color: Color::WHITE,
-        perceptual_roughness: 0.95,
+        perceptual_roughness: 0.92,
         ..default()
     });
     spawn_navigation_markers(commands, meshes, materials);
@@ -131,8 +131,11 @@ fn spawn_rolling_hills(
                     let dx = terrain_height(world_x + 0.5, world_z) - terrain_height(world_x - 0.5, world_z);
                     let dz = terrain_height(world_x, world_z + 0.5) - terrain_height(world_x, world_z - 0.5);
                     normals.push(Vec3::new(-dx, 1.0, -dz).normalize().to_array());
-                    let shade = (height / 36.0 + 0.5).clamp(0.0, 1.0);
-                    colors.push([0.13 + shade * 0.12, 0.25 + shade * 0.15, 0.07 + shade * 0.07, 1.0]);
+                    // Subtle concrete mottling in world coordinates keeps chunk seams invisible.
+                    let shade = 0.44
+                        + 0.025 * (world_x * 0.71).sin() * (world_z * 0.63).sin()
+                        + 0.015 * (height / 18.0).clamp(-1.0, 1.0);
+                    colors.push([shade, shade * 1.01, shade * 1.02, 1.0]);
                 }
             }
             let mut triangles = Vec::new();
@@ -161,6 +164,7 @@ fn spawn_rolling_hills(
                 Transform::from_translation(origin),
                 RigidBody::Static,
                 collider,
+                Friction::new(1.3).with_static_coefficient(1.5),
                 // Avoid drawing half a million triangle edges every frame.
                 DebugRender::none(),
             ));
@@ -207,7 +211,7 @@ fn draw_terrain_grid(
             let major = (fixed.round() as i32).rem_euclid(100) == 0;
             let rgb = if fixed.abs() < 0.1 {
                 if direction == 0 { [0.2, 0.7, 1.0] } else { [1.0, 0.3, 0.2] }
-            } else if major { [0.95, 0.8, 0.4] } else { [0.55, 0.7, 0.55] };
+            } else if major { [0.95, 0.8, 0.4] } else { [0.15, 0.18, 0.2] };
             let along = if direction == 0 { anchor.y } else { anchor.x };
             for segment in 0..100 {
                 let start = along - RADIUS + segment as f32 * GRID_SPACING;
@@ -218,7 +222,7 @@ fn draw_terrain_grid(
                 let distance = ((a + b) * 0.5 - center).length();
                 let fade = (1.0 - distance / RADIUS).clamp(0.0, 1.0);
                 if fade <= 0.0 { continue; }
-                let alpha = fade * if major { 0.9 } else { 0.45 };
+                let alpha = fade * if major { 0.9 } else { 0.6 };
                 gizmos.line(
                     Vec3::new(a.x, terrain_surface_height(a.x, a.y) + 0.06, a.y),
                     Vec3::new(b.x, terrain_surface_height(b.x, b.y) + 0.06, b.y),

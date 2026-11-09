@@ -30,7 +30,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 ## Terrain
 
-The active world is a 2,048 m square of rolling hills, with a flat starting area.
+The active world is a 2,048 m square of concrete rolling hills, with a flat starting area.
 Ground meshes and colliders share a 4 m grid, split into 128 m chunks.
 The original track asset and spawn code are preserved. To restore the track,
 change `WorldTerrain::RollingHills` to `WorldTerrain::Track` in `src/main.rs`.
@@ -42,6 +42,9 @@ Hills mode draws a terrain-following grid every 20 m, with gold lines every
 of the driver. Four colored reference posts sit 100 m from the origin:
 north cyan, south blue, east orange, and west red. Posts are visual only.
 Low-angle sunlight and reduced ambient fill emphasize the slopes.
+The rough gray concrete has subtle mottling and dark minor grid lines. Terrain
+colliders use static friction 1.5 and dynamic friction 1.3. The raycast tires use
+their own load-limited grip coefficient, defaulting to 1.6 (previously 1.1).
 
 # Roadmap 
 - [ ] Compile to WASM
