@@ -19,7 +19,8 @@ pub struct WorldPlugin;
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<WorldTerrain>()
-            .add_systems(Startup, setup_world);
+            .add_systems(Startup, setup_world)
+            .add_systems(Update, draw_terrain_grid);
     }
 }
 
@@ -36,17 +37,17 @@ fn setup_world(
     }
 
     commands.insert_resource(GlobalAmbientLight {
-        brightness: 1000.0,
+        brightness: if *terrain_mode == WorldTerrain::RollingHills { 150.0 } else { 1000.0 },
         ..default()
     });
     // Low-angle sunlight makes hill contours readable while driving.
     commands.spawn((
         DirectionalLight {
-            illuminance: 10_000.0,
+            illuminance: 20_000.0,
             shadow_maps_enabled: true,
             ..default()
         },
-        Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -0.65, -0.4, 0.0)),
+        Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -0.4, -0.65, 0.0)),
     ));
 
     let mesh = meshes.add(Cuboid::new(0.25, 0.25, 0.25));
@@ -106,6 +107,7 @@ fn spawn_rolling_hills(
         perceptual_roughness: 0.95,
         ..default()
     });
+    spawn_navigation_markers(commands, meshes, materials);
     let half_size = TERRAIN_CHUNKS as f32 * CHUNK_SIZE * 0.5;
     for chunk_z in 0..TERRAIN_CHUNKS {
         for chunk_x in 0..TERRAIN_CHUNKS {
@@ -163,5 +165,101 @@ fn spawn_rolling_hills(
                 DebugRender::none(),
             ));
         }
+    }
+}
+
+/// Interpolate the actual terrain triangles rather than floating above/below
+/// their analytic height function between the four-metre mesh samples.
+fn terrain_surface_height(x: f32, z: f32) -> f32 {
+    let cell_x = (x / GRID_SPACING).floor() * GRID_SPACING;
+    let cell_z = (z / GRID_SPACING).floor() * GRID_SPACING;
+    let u = (x - cell_x) / GRID_SPACING;
+    let v = (z - cell_z) / GRID_SPACING;
+    let h00 = terrain_height(cell_x, cell_z);
+    let h10 = terrain_height(cell_x + GRID_SPACING, cell_z);
+    let h01 = terrain_height(cell_x, cell_z + GRID_SPACING);
+    let h11 = terrain_height(cell_x + GRID_SPACING, cell_z + GRID_SPACING);
+    if u + v <= 1.0 {
+        h00 + (h10 - h00) * u + (h01 - h00) * v
+    } else {
+        h11 + (h01 - h11) * (1.0 - u) + (h10 - h11) * (1.0 - v)
+    }
+}
+
+fn draw_terrain_grid(
+    terrain: Res<WorldTerrain>,
+    controlled: Query<&Transform, With<Controlled>>,
+    mut gizmos: Gizmos,
+) {
+    if *terrain != WorldTerrain::RollingHills { return; }
+    let Ok(transform) = controlled.single() else { return; };
+    const LINE_SPACING: f32 = 20.0;
+    const RADIUS: f32 = 200.0;
+    let center = Vec2::new(transform.translation.x, transform.translation.z);
+    let anchor = (center / LINE_SPACING).floor() * LINE_SPACING;
+    let bound = TERRAIN_CHUNKS as f32 * CHUNK_SIZE * 0.5;
+    // World-anchored coordinates remain fixed as the visible grid follows the driver.
+    for direction in 0..2 {
+        for line in -10..=10 {
+            let fixed = (if direction == 0 { anchor.x } else { anchor.y })
+                + line as f32 * LINE_SPACING;
+            if fixed.abs() > bound { continue; }
+            let major = (fixed.round() as i32).rem_euclid(100) == 0;
+            let rgb = if fixed.abs() < 0.1 {
+                if direction == 0 { [0.2, 0.7, 1.0] } else { [1.0, 0.3, 0.2] }
+            } else if major { [0.95, 0.8, 0.4] } else { [0.55, 0.7, 0.55] };
+            let along = if direction == 0 { anchor.y } else { anchor.x };
+            for segment in 0..100 {
+                let start = along - RADIUS + segment as f32 * GRID_SPACING;
+                let end = start + GRID_SPACING;
+                if start < -bound || end > bound { continue; }
+                let a = if direction == 0 { Vec2::new(fixed, start) } else { Vec2::new(start, fixed) };
+                let b = if direction == 0 { Vec2::new(fixed, end) } else { Vec2::new(end, fixed) };
+                let distance = ((a + b) * 0.5 - center).length();
+                let fade = (1.0 - distance / RADIUS).clamp(0.0, 1.0);
+                if fade <= 0.0 { continue; }
+                let alpha = fade * if major { 0.9 } else { 0.45 };
+                gizmos.line(
+                    Vec3::new(a.x, terrain_surface_height(a.x, a.y) + 0.06, a.y),
+                    Vec3::new(b.x, terrain_surface_height(b.x, b.y) + 0.06, b.y),
+                    Color::srgba(rgb[0], rgb[1], rgb[2], alpha),
+                );
+            }
+        }
+    }
+}
+
+fn spawn_navigation_markers(
+    commands: &mut Commands,
+    meshes: &mut Assets<Mesh>,
+    materials: &mut Assets<StandardMaterial>,
+) {
+    let post = meshes.add(Cuboid::new(0.6, 8.0, 0.6));
+    let cap = meshes.add(Cuboid::new(1.5, 0.5, 1.5));
+    let dark = materials.add(Color::srgb(0.08, 0.1, 0.12));
+    for (name, x, z, color) in [
+        ("North 100 m", 0.0, 100.0, Color::srgb(0.1, 0.8, 1.0)),
+        ("South 100 m", 0.0, -100.0, Color::srgb(0.2, 0.4, 1.0)),
+        ("East 100 m", 100.0, 0.0, Color::srgb(1.0, 0.5, 0.1)),
+        ("West 100 m", -100.0, 0.0, Color::srgb(1.0, 0.15, 0.15)),
+    ] {
+        let ground = terrain_surface_height(x, z);
+        let beacon = materials.add(StandardMaterial {
+            base_color: color,
+            unlit: true,
+            ..default()
+        });
+        // Visual reference posts have no collision and do not obstruct driving.
+        commands.spawn((
+            Name::new(name),
+            Mesh3d(post.clone()),
+            MeshMaterial3d(dark.clone()),
+            Transform::from_xyz(x, ground + 4.0, z),
+        ));
+        commands.spawn((
+            Mesh3d(cap.clone()),
+            MeshMaterial3d(beacon),
+            Transform::from_xyz(x, ground + 8.0, z),
+        ));
     }
 }
