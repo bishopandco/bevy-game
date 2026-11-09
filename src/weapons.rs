@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use avian3d::prelude::{Collider, ShapeCastConfig, SpatialQuery, SpatialQueryFilter};
 
-use crate::{globals::GameParams, input::Player};
+use crate::{globals::{Controlled, GameParams}, input::Player};
 
 pub struct WeaponPlugin;
 
@@ -35,7 +35,7 @@ fn player_fire_system(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut players: Query<(&Transform, &mut Player)>,
+    mut players: Query<(&Transform, &mut Player), With<Controlled>>,
 ) {
     let dt = time.delta_secs();
     let recharge_rate = dt / 3.0;

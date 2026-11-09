@@ -4,6 +4,8 @@ use bevy_egui::{egui, EguiContexts, EguiGlobalSettings, EguiPlugin, EguiPrimaryC
 
 use crate::globals::GameParams;
 use crate::input::Player;
+use crate::vehicle::Vehicle;
+use crate::vehicle_systems::{SuspensionTuning, VehicleReset, WHEEL_NAMES};
 
 #[derive(Message, Default, Debug)]
 pub struct RespawnEvent;
@@ -20,7 +22,7 @@ impl Plugin for DebugUiPlugin {
             })
             .insert_resource(DebugUiState::default())
             .add_message::<RespawnEvent>()
-            .add_systems(EguiPrimaryContextPass, debug_ui)
+            .add_systems(EguiPrimaryContextPass, (debug_ui, vehicle_tuning_ui))
             .add_systems(Update, (handle_respawn, toggle_debug_ui));
     }
 }
@@ -119,4 +121,66 @@ fn toggle_debug_ui(
     if keys.just_pressed(KeyCode::Escape) {
         state.visible = !state.visible;
     }
+}
+
+fn vehicle_tuning_ui(
+    mut ctxs: EguiContexts,
+    mut tuning: ResMut<SuspensionTuning>,
+    vehicles: Query<(Entity, &Vehicle)>,
+    mut reset: MessageWriter<VehicleReset>,
+    state: Res<DebugUiState>,
+) -> Result {
+    if !state.visible { return Ok(()); }
+    egui::Window::new("Vehicle suspension")
+        .default_pos(egui::pos2(420.0, 20.0))
+        .default_width(350.0)
+        .show(ctxs.ctx_mut()?, |ui| {
+            ui.label("W/S: drive/reverse · A/D: steer · Space: brake · E: enter/exit");
+            ui.horizontal(|ui| {
+                if ui.button("Reset vehicle").clicked() { reset.write(VehicleReset); }
+                if ui.button("Default tuning").clicked() { *tuning = SuspensionTuning::default(); }
+            });
+            ui.checkbox(&mut tuning.debug_draw, "Show suspension probes and loads");
+            egui::ScrollArea::vertical().max_height(600.0).show(ui, |ui| {
+                ui.collapsing("Drive and steering", |ui| {
+                    ui.add(egui::Slider::new(&mut tuning.engine_force, 0.0..=20_000.0).text("Drive force (N)"));
+                    ui.add(egui::Slider::new(&mut tuning.brake_force, 0.0..=30_000.0).text("Brake force (N)"));
+                    ui.add(egui::Slider::new(&mut tuning.rolling_resistance, 0.0..=0.1).text("Rolling resistance"));
+                    ui.add(egui::Slider::new(&mut tuning.max_speed, 1.0..=100.0).text("Drive cutoff (m/s)"));
+                    ui.add(egui::Slider::new(&mut tuning.steering_angle, 0.0..=0.8).text("Steer limit (rad)"));
+                    ui.add(egui::Slider::new(&mut tuning.steering_rate, 0.1..=5.0).text("Steer rate (rad/s)"));
+                });
+                if ui.button("Copy front-left settings to all wheels").clicked() {
+                    let settings = tuning.wheels[0];
+                    tuning.wheels.fill(settings);
+                }
+                for (index, name) in WHEEL_NAMES.iter().enumerate() {
+                    ui.collapsing(*name, |ui| {
+                        let wheel = &mut tuning.wheels[index];
+                        ui.add(egui::Slider::new(&mut wheel.spring_rate, 5_000.0..=100_000.0).text("Spring (N/m)"));
+                        ui.add(egui::Slider::new(&mut wheel.compression_damping, 0.0..=10_000.0).text("Bump damping (Ns/m)"));
+                        ui.add(egui::Slider::new(&mut wheel.rebound_damping, 0.0..=10_000.0).text("Rebound damping (Ns/m)"));
+                        ui.add(egui::Slider::new(&mut wheel.rest_length, 0.1..=0.8).text("Rest length (m)"));
+                        let max_compression = wheel.rest_length - 0.02;
+                        wheel.compression_travel = wheel.compression_travel.min(max_compression);
+                        ui.add(egui::Slider::new(&mut wheel.compression_travel, 0.01..=max_compression).text("Bump travel (m)"));
+                        ui.add(egui::Slider::new(&mut wheel.droop_travel, 0.0..=0.5).text("Droop travel (m)"));
+                        ui.add(egui::Slider::new(&mut wheel.bump_stop_rate, 0.0..=300_000.0).text("Bump stop (N/m)"));
+                        ui.add(egui::Slider::new(&mut wheel.max_force, 2_000.0..=40_000.0).text("Force limit (N)"));
+                        ui.add(egui::Slider::new(&mut wheel.friction, 0.0..=2.5).text("Tire friction"));
+                        ui.add(egui::Slider::new(&mut wheel.lateral_stiffness, 0.0..=10_000.0).text("Side grip (Ns/m)"));
+                    });
+                }
+                for (entity, vehicle) in &vehicles {
+                    ui.separator();
+                    ui.label(format!("Vehicle {entity:?}: {:.1} m/s", vehicle.speed));
+                    for (index, wheel) in vehicle.wheels.iter().enumerate() {
+                        ui.label(format!("{}: {} · {:.3} m compression · {:.0} N load",
+                            WHEEL_NAMES[index], if wheel.grounded { "contact" } else { "airborne" },
+                            wheel.compression, wheel.load));
+                    }
+                }
+            });
+        });
+    Ok(())
 }

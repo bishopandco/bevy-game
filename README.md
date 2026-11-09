@@ -23,8 +23,9 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
   - `ArrowUp`/`ArrowDown`: accelerate and brake
   - `ArrowLeft`/`ArrowRight`: steer
 - **Vehicle**
-  - `W`/`S`: accelerate and brake
-  - `A`/`D`: steer
+  - `W`/`S`: drive forward or reverse
+  - `A`/`D`: steer the front wheels
+  - `Space`: brake all four wheels
   - `E`: enter or exit a nearby vehicle
 
 # Roadmap 
@@ -32,7 +33,8 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 - [ ] Add Tests
 - [ ] Add Splash and Game UI
 - [ ] Levels manager
-See `SUSPENSION_TUNING.md` for suspension parameters.
+Open the **Vehicle suspension** debug window for live per-wheel tuning and telemetry.
+See [SUSPENSION_TUNING.md](SUSPENSION_TUNING.md) for parameters and model limits.
 
 ## API and frontend dependencies
 
