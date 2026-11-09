@@ -28,6 +28,21 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
   - `Space`: brake all four wheels
   - `E`: enter or exit a nearby vehicle
 
+## Terrain
+
+The active world is a 2,048 m square of rolling hills, with a flat starting area.
+Ground meshes and colliders share a 4 m grid, split into 128 m chunks.
+The original track asset and spawn code are preserved. To restore the track,
+change `WorldTerrain::RollingHills` to `WorldTerrain::Track` in `src/main.rs`.
+Track mode also restores the start and finish markers; hills mode hides them.
+Terrain selection applies at startup.
+
+Hills mode draws a terrain-following grid every 20 m, with gold lines every
+100 m. The X axis is red and the Z axis is blue. The grid fades within 200 m
+of the driver. Four colored reference posts sit 100 m from the origin:
+north cyan, south blue, east orange, and west red. Posts are visual only.
+Low-angle sunlight and reduced ambient fill emphasize the slopes.
+
 # Roadmap 
 - [ ] Compile to WASM
 - [ ] Add Tests

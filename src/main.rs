@@ -9,7 +9,7 @@ use game_demo::weapons::WeaponPlugin;
 use game_demo::weapon_hud::WeaponHudPlugin;
 use game_demo::minimap::MiniMapPlugin;
 use game_demo::sky::SkyDomePlugin;
-use game_demo::world::WorldPlugin;
+use game_demo::world::{WorldPlugin, WorldTerrain};
 use game_demo::targets::TargetsPlugin;
 use game_demo::goals::GoalsPlugin;
 use game_demo::lap_timer::LapTimerPlugin;
@@ -27,6 +27,7 @@ fn main() {
         ))
         .insert_resource(Gravity(Vec3::new(0.0, -9.81, 0.0)))
         .insert_resource(GameParams::default())
+        .insert_resource(WorldTerrain::RollingHills)
         .add_plugins((
             WorldPlugin,
             VehiclePlugin,

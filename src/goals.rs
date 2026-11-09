@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use crate::world::WorldTerrain;
 
 #[derive(Component)]
 pub struct StartGoal;
@@ -10,11 +11,13 @@ pub struct GoalsPlugin;
 
 impl Plugin for GoalsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_goals);
+        app.init_resource::<WorldTerrain>()
+            .add_systems(Startup, setup_goals);
     }
 }
 
-fn setup_goals(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup_goals(mut commands: Commands, asset_server: Res<AssetServer>, terrain: Res<WorldTerrain>) {
+    if *terrain != WorldTerrain::Track { return; }
     let start_scene: Handle<WorldAsset> = asset_server.load("models/start.glb#Scene0");
     commands
         .spawn(WorldAssetRoot(start_scene))
