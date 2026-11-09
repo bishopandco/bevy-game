@@ -29,6 +29,8 @@ fn setup_minimap_camera(
     let size = params.mini_map_size as u32;
     cam.insert(Camera {
         order: 1,
+        // Preserve the main camera's image when drawing the minimap overlay.
+        clear_color: ClearColorConfig::None,
         viewport: Some(Viewport {
             physical_position: UVec2::new(win_size.x - size - 10, 10),
             physical_size: UVec2::splat(size),
