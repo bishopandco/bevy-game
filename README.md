@@ -50,6 +50,9 @@ Low-angle sunlight and reduced ambient fill emphasize the slopes.
 - [ ] Levels manager
 Open the **Vehicle suspension** debug window for live per-wheel tuning and telemetry.
 See [SUSPENSION_TUNING.md](SUSPENSION_TUNING.md) for parameters and model limits.
+The vehicle uses an exposed procedural frame, axles, control arms, and coil-over
+shocks instead of the placeholder car model. The cyan sphere marks the lowered
+center of mass, which is adjustable in the suspension window.
 
 ## API and frontend dependencies
 

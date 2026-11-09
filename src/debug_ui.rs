@@ -143,6 +143,7 @@ fn vehicle_tuning_ui(
             ui.checkbox(&mut tuning.debug_draw, "Show suspension probes and loads");
             egui::ScrollArea::vertical().max_height(600.0).show(ui, |ui| {
                 ui.collapsing("Drive and steering", |ui| {
+                    ui.add(egui::Slider::new(&mut tuning.center_of_mass_height, -0.6..=0.0).text("Center of mass height (m)"));
                     ui.add(egui::Slider::new(&mut tuning.engine_force, 0.0..=20_000.0).text("Drive force (N)"));
                     ui.add(egui::Slider::new(&mut tuning.brake_force, 0.0..=30_000.0).text("Brake force (N)"));
                     ui.add(egui::Slider::new(&mut tuning.rolling_resistance, 0.0..=0.1).text("Rolling resistance"));
